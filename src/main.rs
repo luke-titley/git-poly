@@ -2,13 +2,18 @@ use std::env;
 use std::fs;
 use std::io;
 use std::path;
+use std::sync::mpsc;
+use std::thread;
 use std::vec;
 
 type Paths = vec::Vec<path::PathBuf>;
-
 type Error = io::Result<()>;
 
-fn list_repos() -> Error {
+type Msg = Option<path::PathBuf>;
+type Sender = mpsc::Sender<Msg>;
+type Receiver = mpsc::Receiver<Msg>;
+
+fn list_repos(send : & Sender) -> Error {
     let current_dir = env::current_dir()?;
 
     let mut paths = Paths::new();
@@ -25,8 +30,9 @@ fn list_repos() -> Error {
                 let name = p.file_name().unwrap().to_str();
                 match name {
                     Some(".git") => {
+                        // We've found a git repo, send it back
                         p_buf.pop();
-                        println!("{0}", p_buf.as_path().display());
+                        send.send(Some(p_buf)).unwrap();
                     }
                     _ => {
                         paths.push(p_buf);
@@ -36,11 +42,15 @@ fn list_repos() -> Error {
         }
     }
 
+    // Send an empty message to say we're done
+    send.send(None.unwrap());
+
     Ok(())
 }
 
 fn main() -> Error {
-    list_repos()?;
+    let (send, recv): (Sender, Receiver) = mpsc::channel();
+    list_repos(& send)?;
     //println!("Hello, world!");
 
     Ok(())
