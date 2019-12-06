@@ -8,7 +8,6 @@ use std::vec;
 
 type Paths = vec::Vec<path::PathBuf>;
 type Error = io::Result<()>;
-
 type Msg = Option<path::PathBuf>;
 type Sender = mpsc::Sender<Msg>;
 type Receiver = mpsc::Receiver<Msg>;
