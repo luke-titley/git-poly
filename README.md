@@ -9,6 +9,6 @@ Features:
 
 
 Examples
-```bash
-git poly go grep hello
+```
+>> git poly go grep hello
 ```
