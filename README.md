@@ -17,7 +17,7 @@ Features:
 >> git poly go grep hello
 ```
 
-## Find and replace this with that in the files of every git repo we can find
+## Find and replace 'this' with 'that' in the files of every git repo we can find
 ```
 >> git poly replace "this" "that"
 ```
