@@ -2,6 +2,7 @@ use std::env;
 use std::fs;
 use std::io;
 use std::path;
+use std::process;
 use std::sync::mpsc;
 use std::thread;
 use std::vec;
@@ -61,7 +62,11 @@ fn main() -> Error {
     while let Some(path) = recv.recv().unwrap() {
         // Execute a new thread for processing this result
         threads.push(thread::spawn(move || {
-            println!("{0}", path.as_path().display());
+            println!("# {0}", path.as_path().display());
+            process::Command::new("git")
+                .args(&["status"])
+                .current_dir(path)
+                .status().unwrap();
         }));
     }
 
