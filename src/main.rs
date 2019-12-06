@@ -43,15 +43,25 @@ fn list_repos(send : & Sender) -> Error {
     }
 
     // Send an empty message to say we're done
-    send.send(None.unwrap());
+    send.send(None).unwrap();
 
     Ok(())
 }
 
 fn main() -> Error {
     let (send, recv): (Sender, Receiver) = mpsc::channel();
-    list_repos(& send)?;
-    //println!("Hello, world!");
+    let walker = thread::spawn(move || list_repos(& send).unwrap() );
+
+    // Loop through the results of what the walker is outputting
+    loop {
+        match recv.recv().unwrap() {
+            Some(path) => println!("{0}", path.as_path().display()),
+            None => break,
+        }
+    }
+
+    // The walker should noe be finished
+    walker.join().unwrap();
 
     Ok(())
 }
