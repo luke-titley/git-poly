@@ -16,7 +16,7 @@ type Receiver = mpsc::Receiver<Msg>;
 //------------------------------------------------------------------------------
 // list_repos
 //------------------------------------------------------------------------------
-fn list_repos(send : & Sender) -> Error {
+fn list_repos(send: &Sender) -> Error {
     let current_dir = env::current_dir()?;
 
     let mut paths = Paths::new();
@@ -51,18 +51,19 @@ fn list_repos(send : & Sender) -> Error {
     Ok(())
 }
 
+//------------------------------------------------------------------------------
 fn main() -> Error {
     let (send, recv): (Sender, Receiver) = mpsc::channel();
     let mut threads = Vec::new();
 
-    threads.push(thread::spawn(move || list_repos(& send).unwrap() ));
+    threads.push(thread::spawn(move || list_repos(&send).unwrap()));
 
     // Loop through the results of what the walker is outputting
-    loop {
-        match recv.recv().unwrap() {
-            Some(path) => println!("{0}", path.as_path().display()),
-            None => break,
-        }
+    while let Some(path) = recv.recv().unwrap() {
+        // Execute a new thread for processing this result
+        threads.push(thread::spawn(move || {
+            println!("{0}", path.as_path().display());
+        }));
     }
 
     // Wait for all the threads to finish
