@@ -12,3 +12,11 @@ Examples
 ```
 >> git poly go grep hello
 ```
+
+```
+>> git poly replace "this" "that"
+```
+
+```
+>> git poly ls
+```
