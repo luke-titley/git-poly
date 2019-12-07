@@ -58,15 +58,22 @@ fn main() -> Error {
 
     threads.push(thread::spawn(move || list_repos(&send).unwrap()));
 
+
     // Loop through the results of what the walker is outputting
     while let Some(path) = recv.recv().unwrap() {
         // Execute a new thread for processing this result
         threads.push(thread::spawn(move || {
-            println!("# {0}", path.as_path().display());
-            process::Command::new("git")
+            let mut for_print = Vec::new();
+            //println!("# {0}", path.as_path().display());
+            for_print.clear();
+            let bytes = path.as_path().to_str().unwrap().as_bytes();
+            for_print.extend_from_slice( bytes );
+            let output = process::Command::new("git")
                 .args(&["status"])
                 .current_dir(path)
-                .status().unwrap();
+                .output().unwrap();
+
+            println!("{0}", String::from_utf8(for_print).unwrap());
         }));
     }
 
