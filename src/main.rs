@@ -6,6 +6,7 @@ use std::process;
 use std::sync::mpsc;
 use std::thread;
 use std::vec;
+use std::io::Write;
 
 type Paths = vec::Vec<path::PathBuf>;
 type Error = io::Result<()>;
@@ -58,22 +59,32 @@ fn main() -> Error {
 
     threads.push(thread::spawn(move || list_repos(&send).unwrap()));
 
-
     // Loop through the results of what the walker is outputting
     while let Some(path) = recv.recv().unwrap() {
         // Execute a new thread for processing this result
         threads.push(thread::spawn(move || {
-            let mut for_print = Vec::new();
-            //println!("# {0}", path.as_path().display());
-            for_print.clear();
-            let bytes = path.as_path().to_str().unwrap().as_bytes();
-            for_print.extend_from_slice( bytes );
+            let args : Vec<String> = env::args().collect();
             let output = process::Command::new("git")
-                .args(&["status"])
-                .current_dir(path)
+                .args(&args[1..])
+                .current_dir(path.clone())
                 .output().unwrap();
 
-            println!("{0}", String::from_utf8(for_print).unwrap());
+            // stdout
+            if !output.stdout.is_empty() {
+                let stdout = io::stdout();
+                {
+                    let _ = stdout.lock();
+                    let display = path.as_path().to_str().unwrap();
+                    println!("");
+                    println!("# {0}", display);
+                    println!("# {0}", "-".repeat(display.len()));
+                    io::stdout().write_all(&output.stdout).unwrap();
+                    println!("");
+                }
+            }
+
+            // stderr
+            io::stderr().write_all(&output.stderr).unwrap();
         }));
     }
 
