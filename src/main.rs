@@ -55,21 +55,21 @@ fn list_repos(send: &Sender) -> Error {
 fn write_to_out(
     handle: &mut dyn io::Write,
     repo: &path::PathBuf,
-    output: &Vec<u8>,
+    output: &[u8],
 ) -> io::Result<()> {
     let display = repo.as_path().to_str().unwrap();
 
-    writeln!(handle, "")?;
+    writeln!(handle)?;
     writeln!(handle, "# {0}", display)?;
     writeln!(handle, "# {0}", "-".repeat(display.len()))?;
     handle.write_all(&output)?;
-    writeln!(handle, "")?;
+    writeln!(handle)?;
 
     Ok(())
 }
 
 //------------------------------------------------------------------------------
-fn write_to_stdout(repo: &path::PathBuf, output: &Vec<u8>) {
+fn write_to_stdout(repo: &path::PathBuf, output: &[u8]) {
     // stdout
     if !output.is_empty() {
         let stdout = io::stdout();
@@ -81,7 +81,7 @@ fn write_to_stdout(repo: &path::PathBuf, output: &Vec<u8>) {
 }
 
 //------------------------------------------------------------------------------
-fn write_to_stderr(repo: &path::PathBuf, output: &Vec<u8>) {
+fn write_to_stderr(repo: &path::PathBuf, output: &[u8]) {
     // stdout
     if !output.is_empty() {
         let stderr = io::stderr();
