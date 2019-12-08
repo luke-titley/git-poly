@@ -56,7 +56,6 @@ fn list_repos(send: &Sender) -> Error {
 //------------------------------------------------------------------------------
 struct RepoIterator {
     recv: Receiver,
-    path: path::PathBuf,
 }
 
 //------------------------------------------------------------------------------
@@ -68,10 +67,7 @@ impl RepoIterator {
         thread::spawn(move || list_repos(&send).unwrap());
 
         // Make the new thread object
-        RepoIterator {
-            recv,
-            path: path::PathBuf::new(),
-        }
+        RepoIterator { recv }
     }
 }
 
