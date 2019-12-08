@@ -52,23 +52,36 @@ fn list_repos(send: &Sender) -> Error {
 }
 
 //------------------------------------------------------------------------------
+// RepoIterator
+//------------------------------------------------------------------------------
 struct RepoIterator {
-    send : Sender,
-    recv : Receiver,
+    recv: Receiver,
     path: path::PathBuf,
 }
 
 //------------------------------------------------------------------------------
 impl RepoIterator {
-    fn new() {
+    fn new() -> Self {
+        let (send, recv): (Sender, Receiver) = mpsc::channel();
+
+        // Kick off the traversal thread. It's detached by default.
+        thread::spawn(move || list_repos(&send).unwrap());
+
+        // Make the new thread object
+        RepoIterator {
+            recv,
+            path: path::PathBuf::new(),
+        }
     }
 }
 
 //------------------------------------------------------------------------------
-impl<'a> Iterator for RepoIterator {
+impl Iterator for RepoIterator {
     type Item = path::PathBuf;
 
-    fn next(&mut self) -> Option<Self::Item> { self.recv.recv().unwrap() }
+    fn next(&mut self) -> Option<Self::Item> {
+        self.recv.recv().unwrap()
+    }
 }
 
 //------------------------------------------------------------------------------
@@ -121,15 +134,10 @@ fn main() -> Error {
             (index, arguement) => {
                 match arguement.as_str() {
                     "go" => {
-                        let (send, recv): (Sender, Receiver) = mpsc::channel();
                         let mut threads = Vec::new();
 
-                        threads.push(thread::spawn(move || {
-                            list_repos(&send).unwrap()
-                        }));
-
                         // Loop through the results of what the walker is outputting
-                        while let Some(path) = recv.recv().unwrap() {
+                        for path in RepoIterator::new() {
                             // Execute a new thread for processing this result
                             threads.push(thread::spawn(move || {
                                 let args: Vec<String> = env::args().collect();
