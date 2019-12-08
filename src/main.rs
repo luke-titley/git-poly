@@ -1,6 +1,7 @@
 //------------------------------------------------------------------------------
 // Copyrite Luke Titley 2019
 //------------------------------------------------------------------------------
+use regex;
 use std::env;
 use std::fs;
 use std::io;
@@ -15,6 +16,33 @@ type Error = io::Result<()>;
 type Msg = Option<path::PathBuf>;
 type Sender = mpsc::Sender<Msg>;
 type Receiver = mpsc::Receiver<Msg>;
+
+//------------------------------------------------------------------------------
+// Usage
+//------------------------------------------------------------------------------
+const USAGE: &str = "
+USAGE:
+    git poly [OPTIONS] [SUBCOMMAND]
+
+OPTIONS:
+    -f, --filter <regex>   Filter repos using given expression
+
+SUBCOMMANDS
+    go [GIT COMMANDS]      Execute git commands in each repo
+    ls                     List all the git repos discovered
+    replace [FROM] [TO]    Find and replace all occurances of FROM with TO.
+";
+
+//------------------------------------------------------------------------------
+fn usage() {
+    println!("{0}", USAGE);
+}
+
+//------------------------------------------------------------------------------
+fn argument_error() {
+    usage();
+    std::process::exit(1);
+}
 
 //------------------------------------------------------------------------------
 // list_repos
@@ -125,12 +153,11 @@ fn write_to_stderr(repo: &path::PathBuf, output: &[u8]) {
 }
 
 //------------------------------------------------------------------------------
-fn go(args_pos : usize) {
+fn go(args_pos: usize) {
     let mut threads = Vec::new();
 
     // Loop through the results of what the walker is outputting
     for path in RepoIterator::new() {
-
         // Execute a new thread for processing this result
         let thread = thread::spawn(move || {
             let args: Vec<String> = env::args().collect();
@@ -163,15 +190,54 @@ fn ls() {
 }
 
 //------------------------------------------------------------------------------
+struct Flags {
+    filter: regex::Regex,
+}
+
+//------------------------------------------------------------------------------
+impl Flags {
+    pub fn new() -> Self {
+        Flags {
+            filter: regex::Regex::new(r".*").unwrap(),
+        }
+    }
+}
+
+//------------------------------------------------------------------------------
 fn main() -> Error {
-    let mut args = env::args().enumerate();
-    args.next();
-    for arg in args {
+    // The flags
+    let mut flags = Flags::new();
+
+    // Grab the arguments
+    let args: Vec<String> = env::args().collect();
+
+    if args.len() == 1 {
+        argument_error();
+    }
+
+    // Execute the sub commands
+    for arg in args[1..].iter().enumerate() {
         match arg {
             (index, arguement) => {
                 match arguement.as_str() {
+                    // Flags
+                    "--help" => {
+                        usage();
+                        break;
+                    }
+                    "--filter" => {
+                        if index + 1 == args.len() {
+                            argument_error();
+                        }
+                        flags.filter =
+                            regex::Regex::new(&(args[index + 1])).unwrap();
+                    }
+                    // Sub-commands
                     "go" => {
-                        go(index);
+                        if index + 2 == args.len() {
+                            argument_error();
+                        }
+                        go(index + 1);
                         break;
                     }
                     "ls" => {
@@ -181,7 +247,7 @@ fn main() -> Error {
                     "replace" => {
                         panic!("Not implemented yet");
                     }
-                    _ => panic!("Incorrect arguments"),
+                    _ => argument_error(),
                 }
             }
         }
