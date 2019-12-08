@@ -1,7 +1,6 @@
 use std::env;
 use std::fs;
 use std::io;
-use std::io::Write;
 use std::path;
 use std::process;
 use std::sync::mpsc;
@@ -82,6 +81,18 @@ fn write_to_stdout(repo: &path::PathBuf, output: &Vec<u8>) {
 }
 
 //------------------------------------------------------------------------------
+fn write_to_stderr(repo: &path::PathBuf, output: &Vec<u8>) {
+    // stdout
+    if !output.is_empty() {
+        let stderr = io::stderr();
+        {
+            let mut handle = stderr.lock();
+            write_to_out(&mut handle, repo, output).unwrap();
+        }
+    }
+}
+
+//------------------------------------------------------------------------------
 fn main() -> Error {
     let mut args = env::args().enumerate();
     args.next();
@@ -108,11 +119,9 @@ fn main() -> Error {
                                     .output()
                                     .unwrap();
 
-                                // stdout
+                                // stdout/stderr
                                 write_to_stdout(&path, &output.stdout);
-
-                                // stderr
-                                io::stderr().write_all(&output.stderr).unwrap();
+                                write_to_stderr(&path, &output.stderr);
                             }));
                         }
 
