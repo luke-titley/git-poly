@@ -53,6 +53,35 @@ fn list_repos(send: &Sender) -> Error {
 }
 
 //------------------------------------------------------------------------------
+fn write_to_out(
+    handle: &mut dyn io::Write,
+    repo: &path::PathBuf,
+    output: &Vec<u8>,
+) -> io::Result<()> {
+    let display = repo.as_path().to_str().unwrap();
+
+    writeln!(handle, "")?;
+    writeln!(handle, "# {0}", display)?;
+    writeln!(handle, "# {0}", "-".repeat(display.len()))?;
+    handle.write_all(&output)?;
+    writeln!(handle, "")?;
+
+    Ok(())
+}
+
+//------------------------------------------------------------------------------
+fn write_to_stdout(repo: &path::PathBuf, output: &Vec<u8>) {
+    // stdout
+    if !output.is_empty() {
+        let stdout = io::stdout();
+        {
+            let mut handle = stdout.lock();
+            write_to_out(&mut handle, repo, output).unwrap();
+        }
+    }
+}
+
+//------------------------------------------------------------------------------
 fn main() -> Error {
     let mut args = env::args().enumerate();
     args.next();
@@ -80,24 +109,7 @@ fn main() -> Error {
                                     .unwrap();
 
                                 // stdout
-                                if !output.stdout.is_empty() {
-                                    let stdout = io::stdout();
-                                    {
-                                        let _ = stdout.lock();
-                                        let display =
-                                            path.as_path().to_str().unwrap();
-                                        println!("");
-                                        println!("# {0}", display);
-                                        println!(
-                                            "# {0}",
-                                            "-".repeat(display.len())
-                                        );
-                                        io::stdout()
-                                            .write_all(&output.stdout)
-                                            .unwrap();
-                                        println!("");
-                                    }
-                                }
+                                write_to_stdout(&path, &output.stdout);
 
                                 // stderr
                                 io::stderr().write_all(&output.stderr).unwrap();
@@ -129,10 +141,10 @@ fn main() -> Error {
                         for thread in threads {
                             thread.join().unwrap();
                         }
-                    },
+                    }
                     "replace" => {
                         panic!("Not implemented yet");
-                    },
+                    }
                     _ => panic!("Incorrect arguments"),
                 }
             }
