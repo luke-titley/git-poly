@@ -1,3 +1,6 @@
+//------------------------------------------------------------------------------
+// Copyrite Luke Titley 2019
+//------------------------------------------------------------------------------
 use std::env;
 use std::fs;
 use std::io;
@@ -111,13 +114,51 @@ fn write_to_stdout(repo: &path::PathBuf, output: &[u8]) {
 
 //------------------------------------------------------------------------------
 fn write_to_stderr(repo: &path::PathBuf, output: &[u8]) {
-    // stdout
+    // stderr
     if !output.is_empty() {
         let stderr = io::stderr();
         {
             let mut handle = stderr.lock();
             write_to_out(&mut handle, repo, output).unwrap();
         }
+    }
+}
+
+//------------------------------------------------------------------------------
+fn go(args_pos : usize) {
+    let mut threads = Vec::new();
+
+    // Loop through the results of what the walker is outputting
+    for path in RepoIterator::new() {
+
+        // Execute a new thread for processing this result
+        let thread = thread::spawn(move || {
+            let args: Vec<String> = env::args().collect();
+            let output = process::Command::new("git")
+                .args(&args[args_pos + 1..])
+                .current_dir(path.clone())
+                .output()
+                .unwrap();
+
+            // stdout/stderr
+            write_to_stdout(&path, &output.stdout);
+            write_to_stderr(&path, &output.stderr);
+        });
+
+        threads.push(thread);
+    }
+
+    // Wait for all the threads to finish
+    for thread in threads {
+        thread.join().unwrap();
+    }
+}
+
+//------------------------------------------------------------------------------
+fn ls() {
+    for path in RepoIterator::new() {
+        let display = path.as_path().to_str().unwrap();
+        println!("# {0}", display);
     }
 }
 
@@ -130,50 +171,12 @@ fn main() -> Error {
             (index, arguement) => {
                 match arguement.as_str() {
                     "go" => {
-                        let mut threads = Vec::new();
-
-                        // Loop through the results of what the walker is outputting
-                        for path in RepoIterator::new() {
-                            // Execute a new thread for processing this result
-                            threads.push(thread::spawn(move || {
-                                let args: Vec<String> = env::args().collect();
-                                let output = process::Command::new("git")
-                                    .args(&args[index + 1..])
-                                    .current_dir(path.clone())
-                                    .output()
-                                    .unwrap();
-
-                                // stdout/stderr
-                                write_to_stdout(&path, &output.stdout);
-                                write_to_stderr(&path, &output.stderr);
-                            }));
-                        }
-
-                        // Wait for all the threads to finish
-                        for thread in threads {
-                            thread.join().unwrap();
-                        }
-
-                        // We're done now
+                        go(index);
                         break;
                     }
                     "ls" => {
-                        let (send, recv): (Sender, Receiver) = mpsc::channel();
-                        let mut threads = Vec::new();
-
-                        threads.push(thread::spawn(move || {
-                            list_repos(&send).unwrap()
-                        }));
-
-                        // Loop through the results of what the walker is outputting
-                        while let Some(path) = recv.recv().unwrap() {
-                            let display = path.as_path().to_str().unwrap();
-                            println!("# {0}", display);
-                        }
-
-                        for thread in threads {
-                            thread.join().unwrap();
-                        }
+                        ls();
+                        break;
                     }
                     "replace" => {
                         panic!("Not implemented yet");
