@@ -10,7 +10,6 @@ Features:
   repo a new thread is created to process it.
 - Regex based find and replace
 
-
 # Examples
 ## Run a git command across each repo
 ```

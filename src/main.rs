@@ -112,6 +112,24 @@ fn main() -> Error {
                         // We're done now
                         break;
                     }
+                    "ls" => {
+                        let (send, recv): (Sender, Receiver) = mpsc::channel();
+                        let mut threads = Vec::new();
+
+                        threads.push(thread::spawn(move || {
+                            list_repos(&send).unwrap()
+                        }));
+
+                        // Loop through the results of what the walker is outputting
+                        while let Some(path) = recv.recv().unwrap() {
+                            let display = path.as_path().to_str().unwrap();
+                            println!("# {0}", display);
+                        }
+
+                        for thread in threads {
+                            thread.join().unwrap();
+                        }
+                    }
                     _ => panic!("Incorrect arguments"),
                 }
             }
