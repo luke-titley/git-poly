@@ -52,6 +52,26 @@ fn list_repos(send: &Sender) -> Error {
 }
 
 //------------------------------------------------------------------------------
+struct RepoIterator {
+    send : Sender,
+    recv : Receiver,
+    path: path::PathBuf,
+}
+
+//------------------------------------------------------------------------------
+impl RepoIterator {
+    fn new() {
+    }
+}
+
+//------------------------------------------------------------------------------
+impl<'a> Iterator for RepoIterator {
+    type Item = path::PathBuf;
+
+    fn next(&mut self) -> Option<Self::Item> { self.recv.recv().unwrap() }
+}
+
+//------------------------------------------------------------------------------
 fn write_to_out(
     handle: &mut dyn io::Write,
     repo: &path::PathBuf,
