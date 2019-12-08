@@ -39,8 +39,8 @@ fn usage() {
 }
 
 //------------------------------------------------------------------------------
-fn argument_error() {
-    usage();
+fn argument_error(msg: &str) {
+    println!("error: {0}\n{1}", msg, USAGE);
     std::process::exit(1);
 }
 
@@ -212,47 +212,50 @@ fn main() -> Error {
     let env_args: Vec<String> = env::args().collect();
 
     if env_args.len() == 1 {
-        argument_error();
+        argument_error("Not enough arguments");
     }
 
     // Args is argv without the executable name
     let args = &env_args[1..];
 
     // Execute the sub commands
-    for arg in args.iter().enumerate() {
-        match arg {
-            (index, arguement) => {
-                match arguement.as_str() {
-                    // Flags
-                    "--help" => {
-                        usage();
-                        break;
-                    }
-                    "--filter" => {
-                        if index + 1 == args.len() {
-                            argument_error();
-                        }
-                        flags.filter =
-                            regex::Regex::new(&(args[index + 1])).unwrap();
-                    }
-                    // Sub-commands
-                    "go" => {
-                        if index + 1 == args.len() {
-                            argument_error();
-                        }
-                        go(index + 1);
-                        break;
-                    }
-                    "ls" => {
-                        ls();
-                        break;
-                    }
-                    "replace" => {
-                        panic!("Not implemented yet");
-                    }
-                    _ => argument_error(),
+    let mut skip: usize = 0;
+    for index in 0..args.len() {
+        if skip == 0 {
+            let arg = &args[index];
+            match arg.as_str() {
+                // Flags
+                "--help" | "-h" => {
+                    usage();
+                    break;
                 }
+                "--filter" | "-f" => {
+                    if (index + 1) == args.len() {
+                        argument_error("--filter requires an expression "
+                                       "(ie --filter '.*')");
+                    }
+                    flags.filter = regex::Regex::new(&(args[index])).unwrap();
+                    skip = 1;
+                }
+                // Sub-commands
+                "go" => {
+                    if index + 1 == args.len() {
+                        argument_error("go requires at least one git command");
+                    }
+                    go(index + 1);
+                    break;
+                }
+                "ls" => {
+                    ls();
+                    break;
+                }
+                "replace" => {
+                    panic!("Not implemented yet");
+                }
+                _ => argument_error("argument not recognised"),
             }
+        } else {
+            skip -= 1;
         }
     }
 
