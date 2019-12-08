@@ -182,10 +182,12 @@ fn go(args_pos: usize) {
 }
 
 //------------------------------------------------------------------------------
-fn ls() {
+fn ls(regex : & regex::Regex) {
     for path in RepoIterator::new() {
         let display = path.as_path().to_str().unwrap();
-        println!("# {0}", display);
+        if regex.is_match(display) {
+            println!("# {0}", display);
+        }
     }
 }
 
@@ -231,10 +233,10 @@ fn main() -> Error {
                 }
                 "--filter" | "-f" => {
                     if (index + 1) == args.len() {
-                        argument_error("--filter requires an expression "
-                                       "(ie --filter '.*')");
+                        argument_error("--filter requires an expression \
+                                        (ie --filter '.*')");
                     }
-                    flags.filter = regex::Regex::new(&(args[index])).unwrap();
+                    flags.filter = regex::Regex::new(&(args[index+1])).unwrap();
                     skip = 1;
                 }
                 // Sub-commands
@@ -246,7 +248,7 @@ fn main() -> Error {
                     break;
                 }
                 "ls" => {
-                    ls();
+                    ls(&flags.filter);
                     break;
                 }
                 "replace" => {
