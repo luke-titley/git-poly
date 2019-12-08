@@ -129,7 +129,10 @@ fn main() -> Error {
                         for thread in threads {
                             thread.join().unwrap();
                         }
-                    }
+                    },
+                    "replace" => {
+                        panic!("Not implemented yet");
+                    },
                     _ => panic!("Incorrect arguments"),
                 }
             }
