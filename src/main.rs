@@ -209,14 +209,17 @@ fn main() -> Error {
     let mut flags = Flags::new();
 
     // Grab the arguments
-    let args: Vec<String> = env::args().collect();
+    let env_args: Vec<String> = env::args().collect();
 
-    if args.len() == 1 {
+    if env_args.len() == 1 {
         argument_error();
     }
 
+    // Args is argv without the executable name
+    let args = &env_args[1..];
+
     // Execute the sub commands
-    for arg in args[1..].iter().enumerate() {
+    for arg in args.iter().enumerate() {
         match arg {
             (index, arguement) => {
                 match arguement.as_str() {
@@ -234,7 +237,7 @@ fn main() -> Error {
                     }
                     // Sub-commands
                     "go" => {
-                        if index + 2 == args.len() {
+                        if index + 1 == args.len() {
                             argument_error();
                         }
                         go(index + 1);
