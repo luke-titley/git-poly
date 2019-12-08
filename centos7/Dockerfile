@@ -8,4 +8,4 @@ run yum install -y gcc
 # Build the project
 add src src
 add Cargo.toml Cargo.toml
-run cargo build
+run cargo build --release

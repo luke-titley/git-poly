@@ -25,3 +25,9 @@ Features:
 ```
 >> git poly ls
 ```
+
+# Build native
+cargo build
+
+# Build in docker [centos 7]
+bash centos7/build.sh
