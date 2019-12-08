@@ -47,7 +47,7 @@ fn argument_error(msg: &str) {
 //------------------------------------------------------------------------------
 // list_repos
 //------------------------------------------------------------------------------
-fn list_repos(send: &Sender) -> Error {
+fn list_repos(regex: &regex::Regex, send: &Sender) -> Error {
     let current_dir = env::current_dir()?;
 
     let mut paths = Paths::new();
@@ -66,7 +66,10 @@ fn list_repos(send: &Sender) -> Error {
                     Some(".git") => {
                         // We've found a git repo, send it back
                         p_buf.pop();
-                        send.send(Some(p_buf)).unwrap();
+                        let repo_path = p_buf.as_path();
+                        if regex.is_match(repo_path.to_str().unwrap()) {
+                            send.send(Some(p_buf)).unwrap();
+                        }
                     }
                     _ => {
                         paths.push(p_buf);
@@ -91,11 +94,12 @@ struct RepoIterator {
 
 //------------------------------------------------------------------------------
 impl RepoIterator {
-    fn new() -> Self {
+    fn new(regex: &regex::Regex) -> Self {
         let (send, recv): (Sender, Receiver) = mpsc::channel();
 
         // Kick off the traversal thread. It's detached by default.
-        thread::spawn(move || list_repos(&send).unwrap());
+        let regex_copy = regex.clone();
+        thread::spawn(move || list_repos(&regex_copy, &send).unwrap());
 
         // Make the new thread object
         RepoIterator { recv }
@@ -153,11 +157,11 @@ fn write_to_stderr(repo: &path::PathBuf, output: &[u8]) {
 }
 
 //------------------------------------------------------------------------------
-fn go(args_pos: usize) {
+fn go(regex: &regex::Regex, args_pos: usize) {
     let mut threads = Vec::new();
 
     // Loop through the results of what the walker is outputting
-    for path in RepoIterator::new() {
+    for path in RepoIterator::new(regex) {
         // Execute a new thread for processing this result
         let thread = thread::spawn(move || {
             let args: Vec<String> = env::args().collect();
@@ -182,12 +186,10 @@ fn go(args_pos: usize) {
 }
 
 //------------------------------------------------------------------------------
-fn ls(regex : & regex::Regex) {
-    for path in RepoIterator::new() {
+fn ls(regex: &regex::Regex) {
+    for path in RepoIterator::new(regex) {
         let display = path.as_path().to_str().unwrap();
-        if regex.is_match(display) {
-            println!("# {0}", display);
-        }
+        println!("# {0}", display);
     }
 }
 
@@ -233,10 +235,13 @@ fn main() -> Error {
                 }
                 "--filter" | "-f" => {
                     if (index + 1) == args.len() {
-                        argument_error("--filter requires an expression \
-                                        (ie --filter '.*')");
+                        argument_error(
+                            "--filter requires an expression \
+                             (ie --filter '.*')",
+                        );
                     }
-                    flags.filter = regex::Regex::new(&(args[index+1])).unwrap();
+                    flags.filter =
+                        regex::Regex::new(&(args[index + 1])).unwrap();
                     skip = 1;
                 }
                 // Sub-commands
@@ -244,7 +249,7 @@ fn main() -> Error {
                     if index + 1 == args.len() {
                         argument_error("go requires at least one git command");
                     }
-                    go(index + 1);
+                    go(&flags.filter, index + 1);
                     break;
                 }
                 "ls" => {
