@@ -12,6 +12,7 @@ use std::thread;
 use std::vec;
 
 use std::io::BufRead;
+use std::io::Write;
 
 type Paths = vec::Vec<path::PathBuf>;
 type Error = io::Result<()>;
@@ -190,6 +191,18 @@ fn replace(regex: &regex::Regex, args_pos: usize) {
                     let file_path = path::Path::new(&path).join(line.unwrap());
                     let replace_thread = thread::spawn(move || {
                         println!("Found {0}", file_path.as_path().display());
+
+                        let mut output = Vec::<u8>::new();
+                        {
+                            let input = fs::File::open(file_path.clone()).unwrap();
+                            let buffered = io::BufReader::new(input);
+                            for line in buffered.lines() {
+                                writeln!(output, "{0}", line.unwrap()).unwrap();
+                                //println!("{}", line?);
+                            }
+                        }
+                        let mut input = fs::File::create(file_path).unwrap();
+                        input.write_all(&output).unwrap();
                     });
 
                     replace_threads.push(replace_thread);
