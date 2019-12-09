@@ -173,6 +173,10 @@ fn replace(regex: &regex::Regex, args_pos: usize) {
 
         // Execute a new thread for processing this result
         let thread = thread::spawn(move || {
+
+
+            let from_exp = regex::Regex::new(&from).unwrap();
+
             let args = ["grep", "-l", from.as_str()];
             let output = process::Command::new("git")
                 .args(&args)
@@ -189,6 +193,8 @@ fn replace(regex: &regex::Regex, args_pos: usize) {
                 let stdout = io::BufReader::new(&output.stdout as &[u8]);
                 for line in stdout.lines() {
                     let file_path = path::Path::new(&path).join(line.unwrap());
+                    let from_regex = from_exp.clone();
+                    let to_regex = to.clone();
                     let replace_thread = thread::spawn(move || {
                         println!("Found {0}", file_path.as_path().display());
 
@@ -197,7 +203,9 @@ fn replace(regex: &regex::Regex, args_pos: usize) {
                             let input = fs::File::open(file_path.clone()).unwrap();
                             let buffered = io::BufReader::new(input);
                             for line in buffered.lines() {
-                                writeln!(output, "{0}", line.unwrap()).unwrap();
+                                let old_line = line.unwrap();
+                                let new_line = from_regex.replace_all(&old_line as &str, &to_regex as &str);
+                                writeln!(output, "{0}", new_line).unwrap();
                                 //println!("{}", line?);
                             }
                         }
