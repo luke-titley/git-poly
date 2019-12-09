@@ -194,8 +194,6 @@ fn replace(regex: &regex::Regex, args_pos: usize) {
                     let from_regex = from_exp.clone();
                     let to_regex = to.clone();
                     let replace_thread = thread::spawn(move || {
-                        println!("Found {0}", file_path.as_path().display());
-
                         let mut output = Vec::<u8>::new();
                         {
                             let input =
@@ -208,7 +206,6 @@ fn replace(regex: &regex::Regex, args_pos: usize) {
                                     &to_regex as &str,
                                 );
                                 writeln!(output, "{0}", new_line).unwrap();
-                                //println!("{}", line?);
                             }
                         }
                         let mut input = fs::File::create(file_path).unwrap();
