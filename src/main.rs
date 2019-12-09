@@ -60,7 +60,7 @@ fn list_repos(regex: &regex::Regex, send: &Sender) -> Error {
     // Walk over the directory
     while !paths.is_empty() {
         let path = paths.pop().unwrap();
-        match fs::read_dir(path) {
+        match fs::read_dir(path.clone()) {
             Ok(dir) => {
                 for entry in dir {
                     let p = entry?.path();
@@ -85,7 +85,7 @@ fn list_repos(regex: &regex::Regex, send: &Sender) -> Error {
             }
             Err(error) => {
                 let mut stderr = std::io::stderr();
-                writeln!(stderr, "{0}", error).unwrap();
+                writeln!(stderr, "{0} '{1}'", error, path.display()).unwrap();
             }
         }
     }
