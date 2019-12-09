@@ -11,6 +11,8 @@ use std::sync::mpsc;
 use std::thread;
 use std::vec;
 
+use std::io::BufRead;
+
 type Paths = vec::Vec<path::PathBuf>;
 type Error = io::Result<()>;
 type Msg = Option<path::PathBuf>;
@@ -157,6 +159,59 @@ fn write_to_stderr(repo: &path::PathBuf, output: &[u8]) {
 }
 
 //------------------------------------------------------------------------------
+fn replace(regex: &regex::Regex, args_pos: usize) {
+    let mut threads = Vec::new();
+
+    let args: Vec<String> = env::args().collect();
+
+    // Loop through the results of what the walker is outputting
+    for path in RepoIterator::new(regex) {
+        // Get hold of the from and to
+        let from = args[args_pos + 1].clone();
+        let to = args[args_pos + 2].clone();
+
+        // Execute a new thread for processing this result
+        let thread = thread::spawn(move || {
+            let args = ["grep", "-l", from.as_str()];
+            let output = process::Command::new("git")
+                .args(&args)
+                .current_dir(path.clone())
+                .output()
+                .unwrap();
+
+            // stderr
+            write_to_stderr(&path, &output.stderr);
+
+            // perform the find and replace
+            if !output.stdout.is_empty() {
+                let mut replace_threads = Vec::new();
+                let stdout = io::BufReader::new(&output.stdout as &[u8]);
+                for line in stdout.lines() {
+                    let file_path = path::Path::new(&path).join(line.unwrap());
+                    let replace_thread = thread::spawn(move || {
+                        println!("Found {0}", file_path.as_path().display());
+                    });
+
+                    replace_threads.push(replace_thread);
+                }
+
+                // Wait for all the replace threads to finish
+                for replace_thread in replace_threads {
+                    replace_thread.join().unwrap();
+                }
+            }
+        });
+
+        threads.push(thread);
+    }
+
+    // Wait for all the threads to finish
+    for thread in threads {
+        thread.join().unwrap();
+    }
+}
+
+//------------------------------------------------------------------------------
 fn go(regex: &regex::Regex, args_pos: usize) {
     let mut threads = Vec::new();
 
@@ -257,7 +312,13 @@ fn main() -> Error {
                     break;
                 }
                 "replace" => {
-                    panic!("Not implemented yet");
+                    if index + 2 >= args.len() {
+                        argument_error(
+                            "replace requires at least two arguments",
+                        );
+                    }
+                    replace(&flags.filter, index + 1);
+                    break;
                 }
                 _ => argument_error("argument not recognised"),
             }
