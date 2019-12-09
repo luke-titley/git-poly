@@ -173,8 +173,6 @@ fn replace(regex: &regex::Regex, args_pos: usize) {
 
         // Execute a new thread for processing this result
         let thread = thread::spawn(move || {
-
-
             let from_exp = regex::Regex::new(&from).unwrap();
 
             let args = ["grep", "-l", from.as_str()];
@@ -200,11 +198,15 @@ fn replace(regex: &regex::Regex, args_pos: usize) {
 
                         let mut output = Vec::<u8>::new();
                         {
-                            let input = fs::File::open(file_path.clone()).unwrap();
+                            let input =
+                                fs::File::open(file_path.clone()).unwrap();
                             let buffered = io::BufReader::new(input);
                             for line in buffered.lines() {
                                 let old_line = line.unwrap();
-                                let new_line = from_regex.replace_all(&old_line as &str, &to_regex as &str);
+                                let new_line = from_regex.replace_all(
+                                    &old_line as &str,
+                                    &to_regex as &str,
+                                );
                                 writeln!(output, "{0}", new_line).unwrap();
                                 //println!("{}", line?);
                             }
