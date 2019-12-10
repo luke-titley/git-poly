@@ -381,7 +381,12 @@ fn status(regex: &regex::Regex) {
             }
         }
 
-        println!("        {0}", path);
+        match status.as_str() {
+            "M " | " M" => print!("        modified:   "),
+            "N " => print!("        new:    "),
+            _ => print!("        "),
+        }
+        println!("{0}", path);
     }
 }
 
