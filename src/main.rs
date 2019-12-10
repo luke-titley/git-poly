@@ -17,7 +17,7 @@ use std::io::Write;
 
 type Paths = vec::Vec<path::PathBuf>;
 type Error = io::Result<()>;
-type StatusMsg = (String, String);
+type StatusMsg = (String, String, String);
 type StatusSender = mpsc::Sender<StatusMsg>;
 type StatusReceiver = mpsc::Receiver<StatusMsg>;
 type PathMsg = Option<path::PathBuf>;
@@ -281,6 +281,26 @@ fn ls(regex: &regex::Regex) {
 }
 
 //------------------------------------------------------------------------------
+fn get_branch_name(path : & path::PathBuf) -> String {
+    let output = process::Command::new("git")
+        .args(&["rev-parse", "--abbrev-ref", "HEAD"])
+        .current_dir(path.clone())
+        .output()
+        .unwrap();
+
+    write_to_stderr(&path, &output.stderr);
+
+    let stdout = io::BufReader::new(&output.stdout as &[u8]);
+    let result : Vec<_> = stdout.lines().collect();
+
+    if result.is_empty() {
+        return "HEADLESS".to_string();
+    }
+
+    result[0].as_ref().unwrap().to_string()
+}
+
+//------------------------------------------------------------------------------
 fn status(regex: &regex::Regex) {
     let (send, recv): (StatusSender, StatusReceiver) = mpsc::channel();
 
@@ -292,6 +312,9 @@ fn status(regex: &regex::Regex) {
         let splitter = splitter_def.clone();
 
         let thread = thread::spawn( move || {
+
+            let branch_name = get_branch_name(&path);
+
             let args = ["status", "--porcelain"];
             let output = process::Command::new("git")
                 .args(&args)
@@ -312,7 +335,7 @@ fn status(regex: &regex::Regex) {
                     let file = &split[0][2];
                     file_path.push(path.clone());
                     file_path.push(file);
-                    sender.send((status.to_string(),
+                    sender.send((branch_name.clone(), status.to_string(),
                                  file_path.to_str().unwrap().to_string()));
                 }
             }
@@ -334,7 +357,7 @@ fn status(regex: &regex::Regex) {
     // Print the result
     let mut title = '-';
     for change in changes {
-        let (status, path) = change;
+        let (branch, status, path) = change;
         let staged = status.as_bytes()[0] as char;
         if title != staged {
             println!();
@@ -346,8 +369,15 @@ fn status(regex: &regex::Regex) {
                     println!("  (use \"git add <file>...\" to include in what will be committed)");
                     println!();
                 }
-                '?' => println!("Untracked files"),
-                _ => println!("Changes staged for commit:"),
+                '?' => {
+                    println!("Untracked files:");
+                    println!("  (use \"git add <file>...\" to include in what will be committed)");
+                    println!();
+                },
+                _ => {
+                    println!("Changes staged for commit:");
+                    println!();
+                }
             }
         }
 
