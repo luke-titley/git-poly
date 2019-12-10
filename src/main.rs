@@ -10,15 +10,19 @@ use std::process;
 use std::sync::mpsc;
 use std::thread;
 use std::vec;
+use std::iter::FromIterator;
 
 use std::io::BufRead;
 use std::io::Write;
 
 type Paths = vec::Vec<path::PathBuf>;
 type Error = io::Result<()>;
-type Msg = Option<path::PathBuf>;
-type Sender = mpsc::Sender<Msg>;
-type Receiver = mpsc::Receiver<Msg>;
+type StatusMsg = (String, String);
+type StatusSender = mpsc::Sender<StatusMsg>;
+type StatusReceiver = mpsc::Receiver<StatusMsg>;
+type PathMsg = Option<path::PathBuf>;
+type PathSender = mpsc::Sender<PathMsg>;
+type PathReceiver = mpsc::Receiver<PathMsg>;
 
 //------------------------------------------------------------------------------
 // Usage
@@ -50,7 +54,7 @@ fn argument_error(msg: &str) {
 //------------------------------------------------------------------------------
 // list_repos
 //------------------------------------------------------------------------------
-fn list_repos(regex: &regex::Regex, send: &Sender) -> Error {
+fn list_repos(regex: &regex::Regex, send: &PathSender) -> Error {
     let current_dir = env::current_dir()?;
 
     let mut paths = Paths::new();
@@ -100,13 +104,13 @@ fn list_repos(regex: &regex::Regex, send: &Sender) -> Error {
 // RepoIterator
 //------------------------------------------------------------------------------
 struct RepoIterator {
-    recv: Receiver,
+    recv: PathReceiver,
 }
 
 //------------------------------------------------------------------------------
 impl RepoIterator {
     fn new(regex: &regex::Regex) -> Self {
-        let (send, recv): (Sender, Receiver) = mpsc::channel();
+        let (send, recv): (PathSender, PathReceiver) = mpsc::channel();
 
         // Kick off the traversal thread. It's detached by default.
         let regex_copy = regex.clone();
@@ -136,7 +140,7 @@ fn write_to_out(
 
     writeln!(handle)?;
     writeln!(handle, "# {0}", display)?;
-    writeln!(handle, "# {0}", "-".repeat(display.len()))?;
+    writeln!(handle, "--{0}", "-".repeat(display.len()))?;
     handle.write_all(&output)?;
     writeln!(handle)?;
 
@@ -272,7 +276,82 @@ fn go(regex: &regex::Regex, args_pos: usize) {
 fn ls(regex: &regex::Regex) {
     for path in RepoIterator::new(regex) {
         let display = path.as_path().to_str().unwrap();
-        println!("# {0}", display);
+        println!("{0}", display);
+    }
+}
+
+//------------------------------------------------------------------------------
+fn status(regex: &regex::Regex) {
+    let (send, recv): (StatusSender, StatusReceiver) = mpsc::channel();
+
+    let splitter_def = regex::Regex::new(r"( M|\?\?) (.*)").unwrap();
+
+    let mut threads = Vec::new();
+    for path in RepoIterator::new(regex) {
+        let sender = send.clone();
+        let splitter = splitter_def.clone();
+
+        let thread = thread::spawn( move || {
+            let args = ["status", "--porcelain"];
+            let output = process::Command::new("git")
+                .args(&args)
+                .current_dir(path.clone())
+                .output()
+                .unwrap();
+
+            write_to_stderr(&path, &output.stderr);
+
+            let stdout = io::BufReader::new(&output.stdout as &[u8]);
+            for line_result in stdout.lines() {
+                let line = line_result.unwrap();
+                let mut file_path = path::PathBuf::new();
+                let split : Vec<_> = splitter.captures_iter(line.as_str()).collect();
+
+                if ! split.is_empty() {
+                    let status = &split[0][1];
+                    let file = &split[0][2];
+                    file_path.push(path.clone());
+                    file_path.push(file);
+                    sender.send((status.to_string(),
+                                 file_path.to_str().unwrap().to_string()));
+                }
+            }
+        });
+
+        threads.push(thread);
+    }
+    drop(send);
+
+    // Wait for all the threads to finish
+    for thread in threads {
+        thread.join().unwrap();
+    }
+
+    // Store all the changes in a vector;
+    let mut changes = Vec::from_iter(recv.iter());
+    changes.sort();
+
+    // Print the result
+    let mut title = '-';
+    for change in changes {
+        let (status, path) = change;
+        let staged = status.as_bytes()[0] as char;
+        if title != staged {
+            println!();
+
+            title = staged;
+            match title {
+                ' ' => {
+                    println!("Changes not staged for commit:");
+                    println!("  (use \"git add <file>...\" to include in what will be committed)");
+                    println!();
+                }
+                '?' => println!("Untracked files"),
+                _ => println!("Changes staged for commit:"),
+            }
+        }
+
+        println!("        {0}", path);
     }
 }
 
@@ -337,6 +416,10 @@ fn main() -> Error {
                 }
                 "ls" => {
                     ls(&flags.filter);
+                    break;
+                }
+                "status" => {
+                    status(&flags.filter);
                     break;
                 }
                 "replace" => {
