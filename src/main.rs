@@ -304,7 +304,7 @@ fn get_branch_name(path : & path::PathBuf) -> String {
 fn status(regex: &regex::Regex) {
     let (send, recv): (StatusSender, StatusReceiver) = mpsc::channel();
 
-    let splitter_def = regex::Regex::new(r"( M|\?\?) (.*)").unwrap();
+    let splitter_def = regex::Regex::new(r"( M|A |\?\?) (.*)").unwrap();
 
     let mut threads = Vec::new();
     for path in RepoIterator::new(regex) {
@@ -355,38 +355,41 @@ fn status(regex: &regex::Regex) {
     changes.sort();
 
     // Print the result
-    let mut title = '-';
-    for change in changes {
-        let (branch, status, path) = change;
-        let staged = status.as_bytes()[0] as char;
-        if title != staged {
-            println!();
+    if ! changes.is_empty() {
+        let mut title = '-';
+        for change in changes {
+            let (branch, status, path) = change;
+            let staged = status.as_bytes()[0] as char;
+            if title != staged {
+                println!();
 
-            title = staged;
-            match title {
-                ' ' => {
-                    println!("Changes not staged for commit:");
-                    println!("  (use \"git add <file>...\" to include in what will be committed)");
-                    println!();
-                }
-                '?' => {
-                    println!("Untracked files:");
-                    println!("  (use \"git add <file>...\" to include in what will be committed)");
-                    println!();
-                },
-                _ => {
-                    println!("Changes staged for commit:");
-                    println!();
+                title = staged;
+                match title {
+                    ' ' => {
+                        println!("Changes not staged for commit:");
+                        println!("  (use \"git add <file>...\" to include in what will be committed)");
+                        println!();
+                    }
+                    '?' => {
+                        println!("Untracked files:");
+                        println!("  (use \"git add <file>...\" to include in what will be committed)");
+                        println!();
+                    },
+                    _ => {
+                        println!("Changes to be commited:");
+                        println!();
+                    }
                 }
             }
-        }
 
-        match status.as_str() {
-            "M " | " M" => print!("        modified:   "),
-            "N " => print!("        new:    "),
-            _ => print!("        "),
+            match status.as_str() {
+                "M " | " M" => print!("        modified:   "),
+                "A " => print!("        new file:   "),
+                _ => print!("        "),
+            }
+            println!("{0}", path);
         }
-        println!("{0}", path);
+        println!();
     }
 }
 
