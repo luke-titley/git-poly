@@ -307,8 +307,12 @@ fn add_changed(regex: &regex::Regex) {
 }
 
 //------------------------------------------------------------------------------
+fn add_file(path : path::PathBuf) {
+}
+
+//------------------------------------------------------------------------------
 fn add(regex: &regex::Regex, args_pos: usize) {
-    //let mut threads = Vec::new();
+    let mut threads = Vec::new();
 
     let args: Vec<String> = env::args().collect();
 
@@ -320,36 +324,18 @@ fn add(regex: &regex::Regex, args_pos: usize) {
                     minus_u = true;
                     add_changed(regex)
                 }
+            },
+            file_path => {
+                let path = path::PathBuf::from(file_path);
+                threads.push(thread::spawn(move || add_file(path)));
             }
-            _ => (),
         }
-    }
-
-/*
-    // Loop through the results of what the walker is outputting
-    for path in RepoIterator::new(regex) {
-        // Execute a new thread for processing this result
-        let thread = thread::spawn(move || {
-            let args: Vec<String> = env::args().collect();
-            let output = process::Command::new("git")
-                .args(&args[args_pos + 1..])
-                .current_dir(path.clone())
-                .output()
-                .unwrap();
-
-            // stdout/stderr
-            write_to_stdout(&path, &output.stdout);
-            write_to_stderr(&path, &output.stderr);
-        });
-
-        threads.push(thread);
     }
 
     // Wait for all the threads to finish
     for thread in threads {
         thread.join().unwrap();
     }
-*/
 }
 
 //------------------------------------------------------------------------------
