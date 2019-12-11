@@ -407,11 +407,15 @@ fn status(regex: &regex::Regex) {
 
             if branch_title != branch {
                 branch_title = branch;
+                title = '-';
                 println!();
                 println!("on branch {0}", branch_title.cyan());
             }
             let staged = status.as_bytes()[0] as char;
             if title != staged {
+                if title != '-' {
+                    println!();
+                }
                 title = staged;
                 color = print_title(title);
             }
