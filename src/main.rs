@@ -400,7 +400,7 @@ fn status(regex: &regex::Regex) {
         let mut branch_title = changes[0].0.clone();
         let mut title = changes[0].1.as_bytes()[0] as char;
         let mut color;
-        println!("on branch {0}", branch_title);
+        println!("on branch {0}", branch_title.cyan());
         color = print_title(title);
         for change in changes {
             let (branch, status, path) = change;
@@ -408,7 +408,7 @@ fn status(regex: &regex::Regex) {
             if branch_title != branch {
                 branch_title = branch;
                 println!();
-                println!("on branch {0}", branch_title);
+                println!("on branch {0}", branch_title.cyan());
             }
             let staged = status.as_bytes()[0] as char;
             if title != staged {
