@@ -37,9 +37,11 @@ OPTIONS:
     -f, --filter <regex>   Filter repos using given expression
 
 SUBCOMMANDS
+    add                    Add file contents to the index of it's repo
     go [GIT COMMANDS]      Execute git commands in each repo
     ls                     List all the git repos discovered
-    replace [FROM] [TO]    Find and replace all occurances of FROM with TO.
+    replace [FROM] [TO]    Find and replace all occurances of FROM with TO
+    status                 Show the merged working tree status of all the repos
 ";
 
 //------------------------------------------------------------------------------
@@ -276,6 +278,75 @@ fn go(regex: &regex::Regex, args_pos: usize) {
 }
 
 //------------------------------------------------------------------------------
+fn add_changed(regex: &regex::Regex) {
+    let mut threads = Vec::new();
+
+    // Loop through the results of what the walker is outputting
+    for path in RepoIterator::new(regex) {
+        // Execute a new thread for processing this result
+        let thread = thread::spawn(move || {
+            let args = ["add", "-u"];
+            let output = process::Command::new("git")
+                .args(&args)
+                .current_dir(path.clone())
+                .output()
+                .unwrap();
+
+            // stdout/stderr
+            write_to_stdout(&path, &output.stdout);
+            write_to_stderr(&path, &output.stderr);
+        });
+
+        threads.push(thread);
+    }
+
+    // Wait for all the threads to finish
+    for thread in threads {
+        thread.join().unwrap();
+    }
+}
+
+//------------------------------------------------------------------------------
+fn add(regex: &regex::Regex, args_pos: usize) {
+    //let mut threads = Vec::new();
+
+    let args: Vec<String> = env::args().collect();
+
+    for arg in args_pos+1.. {
+        match args[arg].as_str() {
+            "-u" => add_changed(regex),
+            _ => (),
+        }
+    }
+
+/*
+    // Loop through the results of what the walker is outputting
+    for path in RepoIterator::new(regex) {
+        // Execute a new thread for processing this result
+        let thread = thread::spawn(move || {
+            let args: Vec<String> = env::args().collect();
+            let output = process::Command::new("git")
+                .args(&args[args_pos + 1..])
+                .current_dir(path.clone())
+                .output()
+                .unwrap();
+
+            // stdout/stderr
+            write_to_stdout(&path, &output.stdout);
+            write_to_stderr(&path, &output.stderr);
+        });
+
+        threads.push(thread);
+    }
+
+    // Wait for all the threads to finish
+    for thread in threads {
+        thread.join().unwrap();
+    }
+*/
+}
+
+//------------------------------------------------------------------------------
 fn ls(regex: &regex::Regex) {
     for path in RepoIterator::new(regex) {
         let display = path.as_path().to_str().unwrap();
@@ -494,6 +565,17 @@ fn main() -> Error {
                         argument_error("go requires at least one git command");
                     }
                     go(&flags.filter, index + 1);
+                    break;
+                }
+                "add" => {
+                    if index + 1 == args.len() {
+
+                        let error =
+"Nothing specified, nothing added.
+Maybe you wanted to say 'git add .'?";
+                        argument_error(error);
+                    }
+                    add(&flags.filter, index + 1);
                     break;
                 }
                 "ls" => {
