@@ -57,7 +57,8 @@ fn argument_error(msg: &str) {
 // list_repos
 //------------------------------------------------------------------------------
 fn list_repos(regex: &regex::Regex, send: &PathSender) -> Error {
-    let current_dir = env::current_dir()?;
+    let mut current_dir = path::PathBuf::new();
+    current_dir.push(".");
 
     let mut paths = Paths::new();
 
