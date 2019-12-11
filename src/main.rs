@@ -15,6 +15,8 @@ use std::iter::FromIterator;
 use std::io::BufRead;
 use std::io::Write;
 
+use colored::*;
+
 type Paths = vec::Vec<path::PathBuf>;
 type Error = io::Result<()>;
 type StatusMsg = (String, String, String);
@@ -301,21 +303,24 @@ fn get_branch_name(path : & path::PathBuf) -> String {
 }
 
 //------------------------------------------------------------------------------
-fn print_title(title : char) {
+fn print_title(title : char) -> &'static str {
     match title {
         ' ' => {
             println!("Changes not staged for commit:");
             println!("  (use \"git add <file>...\" to include in what will be committed)");
             println!();
+            return "red";
         }
         '?' => {
             println!("Untracked files:");
             println!("  (use \"git add <file>...\" to include in what will be committed)");
             println!();
+            return "red";
         },
         _ => {
             println!("Changes to be commited:");
             println!();
+            return "green";
         }
     }
 }
@@ -324,7 +329,7 @@ fn print_title(title : char) {
 fn status(regex: &regex::Regex) {
     let (send, recv): (StatusSender, StatusReceiver) = mpsc::channel();
 
-    let splitter_def = regex::Regex::new(r"( M|A |\?\?) (.*)").unwrap();
+    let splitter_def = regex::Regex::new(r"( M|M |A |\?\?) (.*)").unwrap();
 
     let mut threads = Vec::new();
     for path in RepoIterator::new(regex) {
@@ -378,8 +383,9 @@ fn status(regex: &regex::Regex) {
     if ! changes.is_empty() {
         let mut branch_title = changes[0].0.clone();
         let mut title = changes[0].1.as_bytes()[0] as char;
+        let mut color = "white";
         println!("on branch {0}", branch_title);
-        print_title(title);
+        color = print_title(title);
         for change in changes {
             let (branch, status, path) = change;
 
@@ -391,15 +397,15 @@ fn status(regex: &regex::Regex) {
             let staged = status.as_bytes()[0] as char;
             if title != staged {
                 title = staged;
-                print_title(title);
+                color = print_title(title);
             }
 
             match status.as_str() {
-                "M " | " M" => print!("        modified:   "),
-                "A " => print!("        new file:   "),
+                "M " | " M" => print!("{0}", "        modified:   ".color(color)),
+                "A " => print!("{0}", "        new file:   ".color(color)),
                 _ => print!("        "),
             }
-            println!("{0}", path);
+            println!("{0}", path.color(color));
         }
         println!();
     }
