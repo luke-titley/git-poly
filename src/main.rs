@@ -464,7 +464,7 @@ fn status(regex: &regex::Regex) {
 
     // Store all the changes in a vector;
     let mut changes = Vec::from_iter(recv.iter());
-    changes.sort();
+    changes.sort(); // TODO LT: Use sort_by with a comparison function that orders the output similarly to git
 
     // Print the result
     if !changes.is_empty() {
