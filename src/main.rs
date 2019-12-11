@@ -5,12 +5,12 @@ use regex;
 use std::env;
 use std::fs;
 use std::io;
+use std::iter::FromIterator;
 use std::path;
 use std::process;
 use std::sync::mpsc;
 use std::thread;
 use std::vec;
-use std::iter::FromIterator;
 
 use std::io::BufRead;
 use std::io::Write;
@@ -284,7 +284,7 @@ fn ls(regex: &regex::Regex) {
 }
 
 //------------------------------------------------------------------------------
-fn get_branch_name(path : & path::PathBuf) -> String {
+fn get_branch_name(path: &path::PathBuf) -> String {
     let output = process::Command::new("git")
         .args(&["rev-parse", "--abbrev-ref", "HEAD"])
         .current_dir(path.clone())
@@ -294,7 +294,7 @@ fn get_branch_name(path : & path::PathBuf) -> String {
     write_to_stderr(&path, &output.stderr);
 
     let stdout = io::BufReader::new(&output.stdout as &[u8]);
-    let result : Vec<_> = stdout.lines().collect();
+    let result: Vec<_> = stdout.lines().collect();
 
     if result.is_empty() {
         return "HEADLESS".to_string();
@@ -304,7 +304,7 @@ fn get_branch_name(path : & path::PathBuf) -> String {
 }
 
 //------------------------------------------------------------------------------
-fn print_title(title : char) -> &'static str {
+fn print_title(title: char) -> &'static str {
     match title {
         ' ' => {
             println!("Changes not staged for commit:");
@@ -317,7 +317,7 @@ fn print_title(title : char) -> &'static str {
             println!("  (use \"git add <file>...\" to include in what will be committed)");
             println!();
             return "red";
-        },
+        }
         'U' => {
             println!("You have unmerged paths.");
             println!("  (fix conflicts and run \"git commit\")");
@@ -326,7 +326,7 @@ fn print_title(title : char) -> &'static str {
             println!("Unmerged paths:");
             println!("  (use \"git add <file>...\" to mark resolution)");
             return "red";
-        },
+        }
         _ => {
             println!("Changes to be commited:");
             println!();
@@ -339,15 +339,15 @@ fn print_title(title : char) -> &'static str {
 fn status(regex: &regex::Regex) {
     let (send, recv): (StatusSender, StatusReceiver) = mpsc::channel();
 
-    let splitter_def = regex::Regex::new(r"(UU| M|M |A | D|D |\?\?) (.*)").unwrap();
+    let splitter_def =
+        regex::Regex::new(r"(UU| M|M |A | D|D |\?\?) (.*)").unwrap();
 
     let mut threads = Vec::new();
     for path in RepoIterator::new(regex) {
         let sender = send.clone();
         let splitter = splitter_def.clone();
 
-        let thread = thread::spawn( move || {
-
+        let thread = thread::spawn(move || {
             let branch_name = get_branch_name(&path);
 
             let args = ["status", "--porcelain"];
@@ -363,15 +363,21 @@ fn status(regex: &regex::Regex) {
             for line_result in stdout.lines() {
                 let line = line_result.unwrap();
                 let mut file_path = path::PathBuf::new();
-                let split : Vec<_> = splitter.captures_iter(line.as_str()).collect();
+                let split: Vec<_> =
+                    splitter.captures_iter(line.as_str()).collect();
 
-                if ! split.is_empty() {
+                if !split.is_empty() {
                     let status = &split[0][1];
                     let file = &split[0][2];
                     file_path.push(path.clone());
                     file_path.push(file);
-                    sender.send((branch_name.clone(), status.to_string(),
-                                 file_path.to_str().unwrap().to_string())).unwrap();
+                    sender
+                        .send((
+                            branch_name.clone(),
+                            status.to_string(),
+                            file_path.to_str().unwrap().to_string(),
+                        ))
+                        .unwrap();
                 }
             }
         });
@@ -390,7 +396,7 @@ fn status(regex: &regex::Regex) {
     changes.sort();
 
     // Print the result
-    if ! changes.is_empty() {
+    if !changes.is_empty() {
         let mut branch_title = changes[0].0.clone();
         let mut title = changes[0].1.as_bytes()[0] as char;
         let mut color;
@@ -411,10 +417,14 @@ fn status(regex: &regex::Regex) {
             }
 
             match status.as_str() {
-                "M " | " M" => print!("{0}", "        modified:   ".color(color)),
-                "D " | " D" => print!("{0}", "        deleted:   ".color(color)),
+                "M " | " M" => {
+                    print!("{0}", "        modified:   ".color(color))
+                }
+                "D " | " D" => {
+                    print!("{0}", "        deleted:   ".color(color))
+                }
                 "A " => print!("{0}", "        new file:   ".color(color)),
-                "UU " => print!("{0}", "        both modified:   ".color(color)),
+                "UU" => print!("{0}", "        both modified:   ".color(color)),
                 _ => print!("        "),
             }
             println!("{0}", path.color(color));
