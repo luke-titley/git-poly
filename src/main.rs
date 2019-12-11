@@ -329,7 +329,7 @@ fn print_title(title : char) -> &'static str {
 fn status(regex: &regex::Regex) {
     let (send, recv): (StatusSender, StatusReceiver) = mpsc::channel();
 
-    let splitter_def = regex::Regex::new(r"( M|M |A |\?\?) (.*)").unwrap();
+    let splitter_def = regex::Regex::new(r"( M|M |A | D|D |\?\?) (.*)").unwrap();
 
     let mut threads = Vec::new();
     for path in RepoIterator::new(regex) {
@@ -402,6 +402,7 @@ fn status(regex: &regex::Regex) {
 
             match status.as_str() {
                 "M " | " M" => print!("{0}", "        modified:   ".color(color)),
+                "D " | " D" => print!("{0}", "        deleted:   ".color(color)),
                 "A " => print!("{0}", "        new file:   ".color(color)),
                 _ => print!("        "),
             }
