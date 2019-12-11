@@ -362,7 +362,7 @@ fn status(regex: &regex::Regex) {
                     file_path.push(path.clone());
                     file_path.push(file);
                     sender.send((branch_name.clone(), status.to_string(),
-                                 file_path.to_str().unwrap().to_string()));
+                                 file_path.to_str().unwrap().to_string())).unwrap();
                 }
             }
         });
@@ -384,7 +384,7 @@ fn status(regex: &regex::Regex) {
     if ! changes.is_empty() {
         let mut branch_title = changes[0].0.clone();
         let mut title = changes[0].1.as_bytes()[0] as char;
-        let mut color = "white";
+        let mut color;
         println!("on branch {0}", branch_title);
         color = print_title(title);
         for change in changes {
