@@ -312,7 +312,7 @@ fn add(regex: &regex::Regex, args_pos: usize) {
 
     let args: Vec<String> = env::args().collect();
 
-    for arg in args_pos+1.. {
+    for arg in args_pos+1..args.len() {
         match args[arg].as_str() {
             "-u" => add_changed(regex),
             _ => (),
