@@ -318,7 +318,20 @@ fn add_file(path : & mut path::PathBuf) {
 
             if repo.exists() {
                 repo.pop();
-                println!("{0} {1}", repo.as_path().display(), parent.display());
+                let relative_path = path.as_path().strip_prefix(repo.as_path()).unwrap().to_str().unwrap();
+
+                let args = ["add", relative_path];
+                let output = process::Command::new("git")
+                    .args(&args)
+                    .current_dir(repo.clone())
+                    .output()
+                    .unwrap();
+
+                // stdout/stderr
+                write_to_stdout(&repo, &output.stdout);
+                write_to_stderr(&repo, &output.stderr);
+
+                break;
             }
         }
     }
