@@ -307,7 +307,21 @@ fn add_changed(regex: &regex::Regex) {
 }
 
 //------------------------------------------------------------------------------
-fn add_file(path : path::PathBuf) {
+fn add_file(path : & mut path::PathBuf) {
+
+    for parent in path.ancestors() {
+        if ! parent.as_os_str().is_empty() {
+            let mut repo = path::PathBuf::new(); // TODO LT: Wanted to keep this around but need nightly to use 'clear'.
+            repo.push(parent);
+            repo.pop();
+            repo.push(".git");
+
+            if repo.exists() {
+                repo.pop();
+                println!("{0} {1}", repo.as_path().display(), parent.display());
+            }
+        }
+    }
 }
 
 //------------------------------------------------------------------------------
@@ -326,8 +340,8 @@ fn add(regex: &regex::Regex, args_pos: usize) {
                 }
             },
             file_path => {
-                let path = path::PathBuf::from(file_path);
-                threads.push(thread::spawn(move || add_file(path)));
+                let mut path = path::PathBuf::from(file_path);
+                threads.push(thread::spawn(move || add_file(& mut path)));
             }
         }
     }
