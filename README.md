@@ -3,27 +3,67 @@ This is an alternative to the mono-repo approach.
 
 git-poly is written in rust.
 
-Features:
+# Features
 - Very fast!
 - Multi-platform
 - Searching for git repos is done asynchronously, the moment we have found a git
   repo a new thread is created to process it.
 - Regex based find and replace
 
+# The Idea
+Although putting all your code in a single repo simplifies a lot of things when
+working across many codebases, it's difficult to do with the current git tools.
+
+Having individual repositories per project (library/application) makes it fairly
+straight forward to manage read/write permissions, continious builds and sandbox
+file history access.
+
+git doesnt scale so well if you put your entire codebase under a single git repo.
+Although perforce manages permissions at the revision control level, git doesnt.
+
+The question this project is trying to answer is:
+    Can we make it fairly straight forward way for a developer to work across multiple
+    git repos at once.
+
+git-poly tries to present multiple repos as if they are one repo for the 60% of operations
+a developer does (add, commit, reset, status, checkout, branch, pull).
+Most of the commands are mirrors of git commands, but designed to work across projects.
+
+The exceptions to this are three new commands:
+- 'go' which will run whatever git commands you want across all repos
+- 'replace' which will perform a find and replace across all repos
+- 'ls' which will list all your git repos
+
+Those commands all work with the '--filter/-f' flag, which allows you to filter
+the repos you are working on, using a regular expression that is matched against
+the file path of the repo.
+
 # Examples
-## Run a git command across each repo
+## The simplest things
+### Search for the word 'hello' in all your repos.
 ```
->> git poly go grep hello
-```
-
-## Find and replace 'this' with 'that' in the files of every git repo we can find
-```
->> git poly replace "this" "that"
+>> git p go grep hello
 ```
 
-## List all the git repos we can find
+### Find and replace 'this' with 'that' in the files of every git repo we can find (using regex)
 ```
->> git poly ls
+>> git p replace "this" "that"
+```
+
+### List all the git repos we can find
+```
+>> git p ls
+```
+
+## The smart things
+### status
+```
+>> git p status
+```
+
+### add
+```
+>> git p add <filename>
 ```
 
 # Build native
