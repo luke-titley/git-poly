@@ -6,6 +6,7 @@ use std::env;
 use std::fs;
 use std::io;
 use std::iter::FromIterator;
+use std::str::FromStr;
 use std::path;
 use std::process;
 use std::sync::mpsc;
@@ -374,6 +375,49 @@ fn ls(regex: &regex::Regex) {
 }
 
 //------------------------------------------------------------------------------
+fn commit(regex: &regex::Regex, msg : &str) {
+    let mut threads = Vec::new();
+
+    let changes =
+        regex::Regex::new(r"^(M|A|D) .*").unwrap();
+
+    for path in RepoIterator::new(regex) {
+        let message = String::from_str(msg).unwrap();
+        let c = changes.clone();
+        threads.push( thread::spawn(move || {
+            let args = ["status", "--porcelain"];
+            let output = process::Command::new("git")
+                .args(&args)
+                .current_dir(path.clone())
+                .output()
+                .unwrap();
+
+            write_to_stderr(&path, &output.stderr);
+
+            let stdout = io::BufReader::new(&output.stdout as &[u8]);
+            for line_result in stdout.lines() {
+                let line = line_result.unwrap();
+                if c.is_match(line.as_str()) {
+                    let output = process::Command::new("git")
+                        .args(&["commit", "-m", message.as_str()])
+                        .current_dir(path.clone())
+                        .output()
+                        .unwrap();
+
+                    write_to_stderr(&path, &output.stderr);
+                    write_to_stdout(&path, &output.stdout);
+                }
+            }
+        }));
+    }
+
+    // Wait for all the threads to finish
+    for thread in threads {
+        thread.join().unwrap();
+    }
+}
+
+//------------------------------------------------------------------------------
 fn get_branch_name(path: &path::PathBuf) -> String {
     let output = process::Command::new("git")
         .args(&["rev-parse", "--abbrev-ref", "HEAD"])
@@ -599,6 +643,22 @@ Maybe you wanted to say 'git add .'?";
                 }
                 "ls" => {
                     ls(&flags.filter);
+                    break;
+                }
+                "commit" => {
+                    if index + 2 >= args.len() {
+                        argument_error(
+                            "commit requires at least arguments -m and a message",
+                        );
+                    }
+
+                    if args[index + 1] != "-m" {
+                        argument_error(
+                            "commit requires -m",
+                        );
+                    }
+
+                    commit(&flags.filter, args[index + 2].as_str());
                     break;
                 }
                 "status" => {
