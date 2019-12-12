@@ -144,9 +144,7 @@ fn write_to_out(
 ) -> io::Result<()> {
     let display = repo.as_path().to_str().unwrap();
 
-    writeln!(handle)?;
-    writeln!(handle, "# {0}", display)?;
-    writeln!(handle, "--{0}", "-".repeat(display.len()))?;
+    writeln!(handle, "{0}", display.cyan())?;
     handle.write_all(&output)?;
     writeln!(handle)?;
 
