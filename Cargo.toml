@@ -1,5 +1,5 @@
 [package]
-name = "git-poly"
+name = "git-p"
 version = "0.1.0"
 authors = ["Luke Titley <luke@titley.com>"]
 edition = "2018"
