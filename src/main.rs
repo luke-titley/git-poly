@@ -339,6 +339,40 @@ fn add_file(path : & mut path::PathBuf) {
 }
 
 //------------------------------------------------------------------------------
+fn ls_files(regex: &regex::Regex) {
+    let mut threads = Vec::new();
+
+    // Loop through the results of what the walker is outputting
+    for path in RepoIterator::new(regex) {
+        threads.push(thread::spawn(move || {
+            let output = process::Command::new("git")
+                .args(&["ls-files"])
+                .current_dir(path.clone())
+                .output()
+                .unwrap();
+
+            write_to_stderr(&path, &output.stderr);
+
+            let outstream = io::stdout();
+            {
+                let _handle = outstream.lock();
+                let stdout = io::BufReader::new(&output.stdout as &[u8]);
+                let flat_path = path.as_path().join( path::Path::new("") );
+                for line in stdout.lines() {
+                    print!("{0}", flat_path.display());
+                    println!("{0}", line.unwrap());
+                }
+            }
+        }));
+    }
+
+    // Wait for all the threads to finish
+    for thread in threads {
+        thread.join().unwrap();
+    }
+}
+
+//------------------------------------------------------------------------------
 fn grep(regex: &regex::Regex, expression : &str) {
     let mut threads = Vec::new();
 
@@ -356,7 +390,7 @@ fn grep(regex: &regex::Regex, expression : &str) {
 
             let outstream = io::stdout();
             {
-                let mut handle = outstream.lock();
+                let _handle = outstream.lock();
                 let stdout = io::BufReader::new(&output.stdout as &[u8]);
                 let flat_path = path.as_path().join( path::Path::new("") );
                 for line in stdout.lines() {
@@ -682,6 +716,10 @@ Maybe you wanted to say 'git add .'?";
                         argument_error("Please provide the expression you would like to grep for");
                     }
                     grep(&flags.filter, args[index+1].as_str());
+                    break;
+                }
+                "ls-files" => {
+                    ls_files(&flags.filter);
                     break;
                 }
                 "ls" => {
