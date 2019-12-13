@@ -35,7 +35,8 @@ USAGE:
     git poly [OPTIONS] [SUBCOMMAND]
 
 OPTIONS:
-    -f, --filter <regex>   Filter repos using given expression
+    -p, --path <regex>        Filter by repo file path using given expression
+    -b, --branch <regex>      Filter by current branch using given expression
 
 SUBCOMMANDS
     go [git command]          Execute git commands in each repo
@@ -539,6 +540,12 @@ fn get_branch_name(path: &path::PathBuf) -> String {
     }
 
     result[0].as_ref().unwrap().to_string()
+}
+
+//------------------------------------------------------------------------------
+fn filter_branch_name(expression : &regex::Regex, path: &path::PathBuf) -> bool {
+    let branch_name = get_branch_name(path);
+    return expression.is_match(branch_name.as_str());
 }
 
 //------------------------------------------------------------------------------
