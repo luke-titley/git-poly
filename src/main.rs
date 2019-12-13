@@ -227,7 +227,7 @@ fn replace(regex: &regex::Regex, branch_regex: &BranchRegex, args_pos: usize) {
 
             // Filter based on branch name
             if let Some(pattern) = branch_filter {
-                if filter_branch(&pattern, &path) {
+                if !filter_branch(&pattern, &path) {
                     return;
                 }
             }
@@ -303,7 +303,7 @@ fn go(path_regex: &regex::Regex, branch_regex: &BranchRegex, args_pos: usize) {
 
             // Filter based on branch name
             if let Some(pattern) = branch_filter {
-                if filter_branch(&pattern, &path) {
+                if !filter_branch(&pattern, &path) {
                     return;
                 }
             }
@@ -342,7 +342,7 @@ fn cmd(regex: &regex::Regex, branch_regex: &BranchRegex, args_pos: usize) {
 
             // Filter based on branch name
             if let Some(pattern) = branch_filter {
-                if filter_branch(&pattern, &path) {
+                if !filter_branch(&pattern, &path) {
                     return;
                 }
             }
@@ -441,7 +441,7 @@ fn ls_files(regex: &regex::Regex, branch_regex: &BranchRegex) {
 
             // Filter based on branch name
             if let Some(pattern) = branch_filter {
-                if filter_branch(&pattern, &path) {
+                if !filter_branch(&pattern, &path) {
                     return;
                 }
             }
@@ -486,7 +486,7 @@ fn grep(regex: &regex::Regex, branch_regex: &BranchRegex, expression : &str) {
 
             // Filter based on branch name
             if let Some(pattern) = branch_filter {
-                if filter_branch(&pattern, &path) {
+                if !filter_branch(&pattern, &path) {
                     return;
                 }
             }
@@ -571,7 +571,7 @@ fn commit(regex: &regex::Regex, branch_regex: &BranchRegex, msg : &str) {
 
             // Filter based on branch name
             if let Some(pattern) = branch_filter {
-                if filter_branch(&pattern, &path) {
+                if !filter_branch(&pattern, &path) {
                     return;
                 }
             }
@@ -657,7 +657,7 @@ fn status(regex: &regex::Regex, branch_regex: &BranchRegex) {
             
             // Filter based on branch name
             if let Some(pattern) = branch_filter {
-                if filter_branch(&pattern, &path) {
+                if !filter_branch(&pattern, &path) {
                     return;
                 }
             }
