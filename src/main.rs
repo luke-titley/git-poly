@@ -677,14 +677,16 @@ fn status(regex: &regex::Regex) {
 
 //------------------------------------------------------------------------------
 struct Flags {
-    filter: regex::Regex,
+    path: regex::Regex,
+    branch: Option<regex::Regex>,
 }
 
 //------------------------------------------------------------------------------
 impl Flags {
     pub fn new() -> Self {
         Flags {
-            filter: regex::Regex::new(r".*").unwrap(),
+            path: regex::Regex::new(r".*").unwrap(),
+            branch: None,
         }
     }
 }
@@ -715,15 +717,26 @@ fn main() -> Error {
                     usage();
                     break;
                 }
-                "--filter" | "-f" => {
+                "--path" | "-p" => {
                     if (index + 1) == args.len() {
                         argument_error(
-                            "--filter requires an expression \
-                             (ie --filter '.*')",
+                            "--path requires an expression \
+                             (ie --path '.*')",
                         );
                     }
-                    flags.filter =
+                    flags.path =
                         regex::Regex::new(&(args[index + 1])).unwrap();
+                    skip = 1;
+                }
+                "--branch" | "-b" => {
+                    if (index + 1) == args.len() {
+                        argument_error(
+                            "--branch requires an expression \
+                             (ie --branch 'feature/foo.*')",
+                        );
+                    }
+                    flags.branch =
+                        Some(regex::Regex::new(&(args[index + 1])).unwrap());
                     skip = 1;
                 }
                 // Sub-commands
@@ -731,14 +744,14 @@ fn main() -> Error {
                     if index + 1 == args.len() {
                         argument_error("go requires at least one git command");
                     }
-                    go(&flags.filter, index + 1);
+                    go(&flags.path, index + 1);
                     break;
                 }
                 "cmd" => {
                     if index + 1 == args.len() {
                         argument_error("cmd requires at least one shell command");
                     }
-                    cmd(&flags.filter, index + 1);
+                    cmd(&flags.path, index + 1);
                     break;
                 }
                 "add" => {
@@ -749,22 +762,22 @@ fn main() -> Error {
 Maybe you wanted to say 'git add .'?";
                         argument_error(error);
                     }
-                    add(&flags.filter, index + 1);
+                    add(&flags.path, index + 1);
                     break;
                 }
                 "grep" => {
                     if index + 1 == args.len() {
                         argument_error("Please provide the expression you would like to grep for");
                     }
-                    grep(&flags.filter, args[index+1].as_str());
+                    grep(&flags.path, args[index+1].as_str());
                     break;
                 }
                 "ls-files" => {
-                    ls_files(&flags.filter);
+                    ls_files(&flags.path);
                     break;
                 }
                 "ls" => {
-                    ls(&flags.filter);
+                    ls(&flags.path);
                     break;
                 }
                 "commit" => {
@@ -780,11 +793,11 @@ Maybe you wanted to say 'git add .'?";
                         );
                     }
 
-                    commit(&flags.filter, args[index + 2].as_str());
+                    commit(&flags.path, args[index + 2].as_str());
                     break;
                 }
                 "status" => {
-                    status(&flags.filter);
+                    status(&flags.path);
                     break;
                 }
                 "replace" => {
@@ -793,7 +806,7 @@ Maybe you wanted to say 'git add .'?";
                             "replace requires at least two arguments",
                         );
                     }
-                    replace(&flags.filter, index + 1);
+                    replace(&flags.path, index + 1);
                     break;
                 }
                 _ => argument_error("argument not recognised"),
