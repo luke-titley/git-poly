@@ -48,9 +48,10 @@ SUBCOMMANDS
     grep <pattern>            Print lines matching a pattern
     ls                        List all the git repos discovered
     ls-files                  Show information about files in the index and the working tree
+    mv <from> <to>            Move or rename a file, a directory, or a symlink
     status                    Show the merged working tree status of all the repos
 
-    replace [FROM] [TO]       Find and replace all occurances of FROM with TO
+    replace <from> <to>       Find and replace all occurances of FROM with TO
 ";
 
 //------------------------------------------------------------------------------
@@ -752,6 +753,10 @@ fn status(regex: &regex::Regex, branch_regex: &BranchRegex) {
 }
 
 //------------------------------------------------------------------------------
+fn mv(from : &str, to: &str) {
+}
+
+//------------------------------------------------------------------------------
 struct Flags {
     path: regex::Regex,
     branch: BranchRegex,
@@ -874,6 +879,15 @@ Maybe you wanted to say 'git add .'?";
                 }
                 "status" => {
                     status(&flags.path, &flags.branch);
+                    break;
+                }
+                "mv" => {
+                    if index + 2 >= args.len() {
+                        argument_error(
+                            "mv requires a source and a dest",
+                        );
+                    }
+                    mv(&args[index + 1], &args[index+2]);
                     break;
                 }
                 "replace" => {
