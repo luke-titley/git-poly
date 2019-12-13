@@ -10,6 +10,9 @@ git-poly is written in rust.
   repo a new thread is created to process it.
 - Regex based find and replace
 
+# Prior-art
+- git slave [read] (http://gitslave.sourceforge.net/gits-man-page.html#get_status_on_all_branches)
+
 # The Idea
 Although putting all your code in a single repo simplifies a lot of things when
 working across many codebases, it's difficult to do with the current git tools.
