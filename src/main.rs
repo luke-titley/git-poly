@@ -400,7 +400,7 @@ fn add_changed(regex: &regex::Regex) {
 }
 
 //------------------------------------------------------------------------------
-fn add_file(path : & mut path::PathBuf) {
+fn relative_to_repo(path : & mut path::PathBuf) -> Option<(path::PathBuf, String)> {
 
     for parent in path.ancestors() {
         if ! parent.as_os_str().is_empty() {
@@ -412,21 +412,28 @@ fn add_file(path : & mut path::PathBuf) {
             if repo.exists() {
                 repo.pop();
                 let relative_path = path.as_path().strip_prefix(repo.as_path()).unwrap().to_str().unwrap();
-
-                let args = ["add", relative_path];
-                let output = process::Command::new("git")
-                    .args(&args)
-                    .current_dir(repo.clone())
-                    .output()
-                    .unwrap();
-
-                // stdout/stderr
-                write_to_stdout(&repo, &output.stdout);
-                write_to_stderr(&repo, &output.stderr);
-
-                break;
+                return Some(( repo, relative_path.to_string() ));
             }
         }
+    }
+
+    None
+}
+
+//------------------------------------------------------------------------------
+fn add_file(path : & mut path::PathBuf) {
+    if let Some((repo, relative_path)) = relative_to_repo(path) {
+
+        let args = ["add", relative_path.as_str()];
+        let output = process::Command::new("git")
+            .args(&args)
+            .current_dir(repo.clone())
+            .output()
+            .unwrap();
+
+        // stdout/stderr
+        write_to_stdout(&repo, &output.stdout);
+        write_to_stderr(&repo, &output.stderr);
     }
 }
 
