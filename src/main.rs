@@ -184,7 +184,33 @@ fn write_to_stderr(repo: &path::PathBuf, output: &[u8]) {
 }
 
 //------------------------------------------------------------------------------
-fn replace(regex: &regex::Regex, args_pos: usize) {
+fn get_branch_name(path: &path::PathBuf) -> String {
+    let output = process::Command::new("git")
+        .args(&["rev-parse", "--abbrev-ref", "HEAD"])
+        .current_dir(path.clone())
+        .output()
+        .unwrap();
+
+    write_to_stderr(&path, &output.stderr);
+
+    let stdout = io::BufReader::new(&output.stdout as &[u8]);
+    let result: Vec<_> = stdout.lines().collect();
+
+    if result.is_empty() {
+        return "HEADLESS".to_string();
+    }
+
+    result[0].as_ref().unwrap().to_string()
+}
+
+//------------------------------------------------------------------------------
+fn filter_branch(expression : &regex::Regex, path: &path::PathBuf) -> bool {
+    let branch_name = get_branch_name(path);
+    return expression.is_match(branch_name.as_str());
+}
+
+//------------------------------------------------------------------------------
+fn replace(regex: &regex::Regex, branch_regex: &BranchRegex, args_pos: usize) {
     let mut threads = Vec::new();
 
     let args: Vec<String> = env::args().collect();
@@ -194,9 +220,18 @@ fn replace(regex: &regex::Regex, args_pos: usize) {
         // Get hold of the from and to
         let from = args[args_pos + 1].clone();
         let to = args[args_pos + 2].clone();
+        let branch_filter = branch_regex.clone();
 
         // Execute a new thread for processing this result
         let thread = thread::spawn(move || {
+
+            // Filter based on branch name
+            if let Some(pattern) = branch_filter {
+                if filter_branch(&pattern, &path) {
+                    return;
+                }
+            }
+
             let from_exp = regex::Regex::new(&from).unwrap();
 
             let args = ["grep", "-l", from.as_str()];
@@ -295,13 +330,23 @@ fn go(path_regex: &regex::Regex, branch_regex: &BranchRegex, args_pos: usize) {
 }
 
 //------------------------------------------------------------------------------
-fn cmd(regex: &regex::Regex, args_pos: usize) {
+fn cmd(regex: &regex::Regex, branch_regex: &BranchRegex, args_pos: usize) {
     let mut threads = Vec::new();
 
     // Loop through the results of what the walker is outputting
     for path in RepoIterator::new(regex) {
+        let branch_filter = branch_regex.clone();
+
         // Execute a new thread for processing this result
         let thread = thread::spawn(move || {
+
+            // Filter based on branch name
+            if let Some(pattern) = branch_filter {
+                if filter_branch(&pattern, &path) {
+                    return;
+                }
+            }
+
             let args: Vec<String> = env::args().collect();
             let args_ref = &args[args_pos + 1..];
             let output = process::Command::new(args_ref[0].clone())
@@ -385,12 +430,22 @@ fn add_file(path : & mut path::PathBuf) {
 }
 
 //------------------------------------------------------------------------------
-fn ls_files(regex: &regex::Regex) {
+fn ls_files(regex: &regex::Regex, branch_regex: &BranchRegex) {
     let mut threads = Vec::new();
 
     // Loop through the results of what the walker is outputting
     for path in RepoIterator::new(regex) {
+        let branch_filter = branch_regex.clone();
+
         threads.push(thread::spawn(move || {
+
+            // Filter based on branch name
+            if let Some(pattern) = branch_filter {
+                if filter_branch(&pattern, &path) {
+                    return;
+                }
+            }
+
             let output = process::Command::new("git")
                 .args(&["ls-files"])
                 .current_dir(path.clone())
@@ -419,13 +474,23 @@ fn ls_files(regex: &regex::Regex) {
 }
 
 //------------------------------------------------------------------------------
-fn grep(regex: &regex::Regex, expression : &str) {
+fn grep(regex: &regex::Regex, branch_regex: &BranchRegex, expression : &str) {
     let mut threads = Vec::new();
 
     // Loop through the results of what the walker is outputting
     for path in RepoIterator::new(regex) {
         let expr = expression.to_string();
+        let branch_filter = branch_regex.clone();
+
         threads.push(thread::spawn(move || {
+
+            // Filter based on branch name
+            if let Some(pattern) = branch_filter {
+                if filter_branch(&pattern, &path) {
+                    return;
+                }
+            }
+
             let output = process::Command::new("git")
                 .args(&["grep", expr.as_str()])
                 .current_dir(path.clone())
@@ -483,7 +548,7 @@ fn add(regex: &regex::Regex, args_pos: usize) {
 }
 
 //------------------------------------------------------------------------------
-fn ls(regex: &regex::Regex) {
+fn ls(regex: &regex::Regex, branch_regex: &BranchRegex) {
     for path in RepoIterator::new(regex) {
         let display = path.as_path().to_str().unwrap();
         println!("{0}", display);
@@ -491,7 +556,7 @@ fn ls(regex: &regex::Regex) {
 }
 
 //------------------------------------------------------------------------------
-fn commit(regex: &regex::Regex, msg : &str) {
+fn commit(regex: &regex::Regex, branch_regex: &BranchRegex, msg : &str) {
     let mut threads = Vec::new();
 
     let changes =
@@ -500,7 +565,17 @@ fn commit(regex: &regex::Regex, msg : &str) {
     for path in RepoIterator::new(regex) {
         let message = String::from_str(msg).unwrap();
         let c = changes.clone();
+        let branch_filter = branch_regex.clone();
+
         threads.push( thread::spawn(move || {
+
+            // Filter based on branch name
+            if let Some(pattern) = branch_filter {
+                if filter_branch(&pattern, &path) {
+                    return;
+                }
+            }
+
             let args = ["status", "--porcelain"];
             let output = process::Command::new("git")
                 .args(&args)
@@ -531,32 +606,6 @@ fn commit(regex: &regex::Regex, msg : &str) {
     for thread in threads {
         thread.join().unwrap();
     }
-}
-
-//------------------------------------------------------------------------------
-fn get_branch_name(path: &path::PathBuf) -> String {
-    let output = process::Command::new("git")
-        .args(&["rev-parse", "--abbrev-ref", "HEAD"])
-        .current_dir(path.clone())
-        .output()
-        .unwrap();
-
-    write_to_stderr(&path, &output.stderr);
-
-    let stdout = io::BufReader::new(&output.stdout as &[u8]);
-    let result: Vec<_> = stdout.lines().collect();
-
-    if result.is_empty() {
-        return "HEADLESS".to_string();
-    }
-
-    result[0].as_ref().unwrap().to_string()
-}
-
-//------------------------------------------------------------------------------
-fn filter_branch(expression : &regex::Regex, path: &path::PathBuf) -> bool {
-    let branch_name = get_branch_name(path);
-    return expression.is_match(branch_name.as_str());
 }
 
 //------------------------------------------------------------------------------
@@ -592,7 +641,7 @@ fn print_title(title: char) -> &'static str {
 }
 
 //------------------------------------------------------------------------------
-fn status(regex: &regex::Regex) {
+fn status(regex: &regex::Regex, branch_regex: &BranchRegex) {
     let (send, recv): (StatusSender, StatusReceiver) = mpsc::channel();
 
     let splitter_def =
@@ -602,8 +651,17 @@ fn status(regex: &regex::Regex) {
     for path in RepoIterator::new(regex) {
         let sender = send.clone();
         let splitter = splitter_def.clone();
+        let branch_filter = branch_regex.clone();
 
         let thread = thread::spawn(move || {
+            
+            // Filter based on branch name
+            if let Some(pattern) = branch_filter {
+                if filter_branch(&pattern, &path) {
+                    return;
+                }
+            }
+
             let branch_name = get_branch_name(&path);
 
             let args = ["status", "--porcelain"];
@@ -769,7 +827,7 @@ fn main() -> Error {
                     if index + 1 == args.len() {
                         argument_error("cmd requires at least one shell command");
                     }
-                    cmd(&flags.path, index + 1);
+                    cmd(&flags.path, &flags.branch, index + 1);
                     break;
                 }
                 "add" => {
@@ -787,15 +845,15 @@ Maybe you wanted to say 'git add .'?";
                     if index + 1 == args.len() {
                         argument_error("Please provide the expression you would like to grep for");
                     }
-                    grep(&flags.path, args[index+1].as_str());
+                    grep(&flags.path, &flags.branch, args[index+1].as_str());
                     break;
                 }
                 "ls-files" => {
-                    ls_files(&flags.path);
+                    ls_files(&flags.path, &flags.branch);
                     break;
                 }
                 "ls" => {
-                    ls(&flags.path);
+                    ls(&flags.path, &flags.branch);
                     break;
                 }
                 "commit" => {
@@ -811,11 +869,11 @@ Maybe you wanted to say 'git add .'?";
                         );
                     }
 
-                    commit(&flags.path, args[index + 2].as_str());
+                    commit(&flags.path, &flags.branch, args[index + 2].as_str());
                     break;
                 }
                 "status" => {
-                    status(&flags.path);
+                    status(&flags.path, &flags.branch);
                     break;
                 }
                 "replace" => {
@@ -824,7 +882,7 @@ Maybe you wanted to say 'git add .'?";
                             "replace requires at least two arguments",
                         );
                     }
-                    replace(&flags.path, index + 1);
+                    replace(&flags.path, &flags.branch, index + 1);
                     break;
                 }
                 _ => argument_error("argument not recognised"),
