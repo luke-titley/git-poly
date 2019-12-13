@@ -38,14 +38,17 @@ OPTIONS:
     -f, --filter <regex>   Filter repos using given expression
 
 SUBCOMMANDS
+    go [git command]          Execute git commands in each repo
+    cmd [comands]             Execute one or more shell commands in each repo
+
     add [-u] [<pathspec>...]  Add file contents to the index of it's repo
-    commit                    Record changes to the repository
-    go [GIT COMMAND]          Execute git commands in each repo
-    grep                      Print lines matching a pattern
+    commit [-m] <message>     Record changes to the repository
+    grep <pattern>            Print lines matching a pattern
     ls                        List all the git repos discovered
     ls-files                  Show information about files in the index and the working tree
-    replace [FROM] [TO]       Find and replace all occurances of FROM with TO
     status                    Show the merged working tree status of all the repos
+
+    replace [FROM] [TO]       Find and replace all occurances of FROM with TO
 ";
 
 //------------------------------------------------------------------------------
@@ -261,6 +264,36 @@ fn go(regex: &regex::Regex, args_pos: usize) {
             let args: Vec<String> = env::args().collect();
             let output = process::Command::new("git")
                 .args(&args[args_pos + 1..])
+                .current_dir(path.clone())
+                .output()
+                .unwrap();
+
+            // stdout/stderr
+            write_to_stdout(&path, &output.stdout);
+            write_to_stderr(&path, &output.stderr);
+        });
+
+        threads.push(thread);
+    }
+
+    // Wait for all the threads to finish
+    for thread in threads {
+        thread.join().unwrap();
+    }
+}
+
+//------------------------------------------------------------------------------
+fn cmd(regex: &regex::Regex, args_pos: usize) {
+    let mut threads = Vec::new();
+
+    // Loop through the results of what the walker is outputting
+    for path in RepoIterator::new(regex) {
+        // Execute a new thread for processing this result
+        let thread = thread::spawn(move || {
+            let args: Vec<String> = env::args().collect();
+            let args_ref = &args[args_pos + 1..];
+            let output = process::Command::new(args_ref[0].clone())
+                .args(&args_ref[1..])
                 .current_dir(path.clone())
                 .output()
                 .unwrap();
@@ -699,6 +732,13 @@ fn main() -> Error {
                         argument_error("go requires at least one git command");
                     }
                     go(&flags.filter, index + 1);
+                    break;
+                }
+                "cmd" => {
+                    if index + 1 == args.len() {
+                        argument_error("cmd requires at least one shell command");
+                    }
+                    cmd(&flags.filter, index + 1);
                     break;
                 }
                 "add" => {
