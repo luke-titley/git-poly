@@ -16,7 +16,6 @@ use std::vec;
 use std::io::BufRead;
 use std::io::Write;
 
-use fs_extra;
 use colored::*;
 
 type Paths = vec::Vec<path::PathBuf>;
