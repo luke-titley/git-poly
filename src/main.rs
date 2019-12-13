@@ -38,14 +38,14 @@ OPTIONS:
     -f, --filter <regex>   Filter repos using given expression
 
 SUBCOMMANDS
-    add                    Add file contents to the index of it's repo
-    commit                 Record changes to the repository
-    go [GIT COMMANDS]      Execute git commands in each repo
-    grep                   Print lines matching a pattern
-    ls                     List all the git repos discovered
-    ls-files               Show information about files in the index and the working tree
-    replace [FROM] [TO]    Find and replace all occurances of FROM with TO
-    status                 Show the merged working tree status of all the repos
+    add [-u] [<pathspec>...]  Add file contents to the index of it's repo
+    commit                    Record changes to the repository
+    go [GIT COMMAND]          Execute git commands in each repo
+    grep                      Print lines matching a pattern
+    ls                        List all the git repos discovered
+    ls-files                  Show information about files in the index and the working tree
+    replace [FROM] [TO]       Find and replace all occurances of FROM with TO
+    status                    Show the merged working tree status of all the repos
 ";
 
 //------------------------------------------------------------------------------
