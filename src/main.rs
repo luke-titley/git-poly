@@ -16,6 +16,7 @@ use std::vec;
 use std::io::BufRead;
 use std::io::Write;
 
+use fs_extra;
 use colored::*;
 
 type Paths = vec::Vec<path::PathBuf>;
@@ -770,15 +771,45 @@ fn mv(from : &str, to: &str) {
     if let Some((from_repo, from_rel)) = relative_to_repo(& mut from_path) {
         if let Some((to_repo, to_rel)) = relative_to_repo(& mut to_path) {
 
-            // Remove the destionation if it exists
-            if to_path.exists() {
-                let output = process::Command::new("git")
-                    .args(&["rm", to_rel.as_str()])
-                    .current_dir(to_repo.clone())
-                    .output()
-                    .unwrap();
+            if from_path.exists() {
 
-                write_to_stderr(&to_repo, &output.stderr);
+                // Remove the destionation if it exists
+                if to_path.exists() {
+                    let output = process::Command::new("git")
+                        .args(&["rm", to_rel.as_str()])
+                        .current_dir(to_repo.clone())
+                        .output()
+                        .unwrap();
+
+                    write_to_stderr(&to_repo, &output.stderr);
+                }
+
+                // Move the file
+                if from_path.is_dir() {
+                    fs_extra::dir::copy(&from_path, &to_path, &fs_extra::dir::CopyOptions::new()).unwrap();
+                } else {
+                    fs::copy(&from_path, &to_path).unwrap();
+                }
+
+                // Remove the old file or folder
+                {
+                    let output = process::Command::new("git")
+                        .args(&["rm", from_rel.as_str()])
+                        .current_dir(from_repo.clone())
+                        .output()
+                        .unwrap();
+                    write_to_stderr(&to_repo, &output.stderr);
+                }
+
+                // Add the newfile or folder
+                {
+                    let output = process::Command::new("git")
+                        .args(&["add", to_rel.as_str()])
+                        .current_dir(to_repo.clone())
+                        .output()
+                        .unwrap();
+                    write_to_stderr(&to_repo, &output.stderr);
+                }
             }
         }
     }
