@@ -26,6 +26,7 @@ type StatusReceiver = mpsc::Receiver<StatusMsg>;
 type PathMsg = Option<path::PathBuf>;
 type PathSender = mpsc::Sender<PathMsg>;
 type PathReceiver = mpsc::Receiver<PathMsg>;
+type BranchRegex = Option<regex::Regex>;
 
 //------------------------------------------------------------------------------
 // Usage
@@ -255,13 +256,23 @@ fn replace(regex: &regex::Regex, args_pos: usize) {
 }
 
 //------------------------------------------------------------------------------
-fn go(regex: &regex::Regex, args_pos: usize) {
+fn go(path_regex: &regex::Regex, branch_regex: &BranchRegex, args_pos: usize) {
     let mut threads = Vec::new();
 
     // Loop through the results of what the walker is outputting
-    for path in RepoIterator::new(regex) {
+    for path in RepoIterator::new(path_regex) {
+        let branch_filter = branch_regex.clone();
+
         // Execute a new thread for processing this result
         let thread = thread::spawn(move || {
+
+            // Filter based on branch name
+            if let Some(pattern) = branch_filter {
+                if filter_branch(&pattern, &path) {
+                    return;
+                }
+            }
+
             let args: Vec<String> = env::args().collect();
             let output = process::Command::new("git")
                 .args(&args[args_pos + 1..])
@@ -543,7 +554,7 @@ fn get_branch_name(path: &path::PathBuf) -> String {
 }
 
 //------------------------------------------------------------------------------
-fn filter_branch_name(expression : &regex::Regex, path: &path::PathBuf) -> bool {
+fn filter_branch(expression : &regex::Regex, path: &path::PathBuf) -> bool {
     let branch_name = get_branch_name(path);
     return expression.is_match(branch_name.as_str());
 }
@@ -685,7 +696,7 @@ fn status(regex: &regex::Regex) {
 //------------------------------------------------------------------------------
 struct Flags {
     path: regex::Regex,
-    branch: Option<regex::Regex>,
+    branch: BranchRegex,
 }
 
 //------------------------------------------------------------------------------
@@ -751,7 +762,7 @@ fn main() -> Error {
                     if index + 1 == args.len() {
                         argument_error("go requires at least one git command");
                     }
-                    go(&flags.path, index + 1);
+                    go(&flags.path, &flags.branch, index + 1);
                     break;
                 }
                 "cmd" => {
