@@ -11,7 +11,7 @@ git-poly is written in rust.
 - Regex based find and replace
 
 # Prior-art
-- git slave [read] (http://gitslave.sourceforge.net/gits-man-page.html#get_status_on_all_branches)
+## git slave [home] (http://gitslave.sourceforge.net/gits-man-page.html#get_status_on_all_branches)
 
 # The Idea
 Although putting all your code in a single repo simplifies a lot of things when
