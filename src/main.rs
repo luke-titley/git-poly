@@ -761,6 +761,27 @@ fn status(regex: &regex::Regex, branch_regex: &BranchRegex) {
 
 //------------------------------------------------------------------------------
 fn mv(from : &str, to: &str) {
+    let mut from_path = path::PathBuf::new();
+    let mut to_path = path::PathBuf::new();
+
+    from_path.push(from);
+    to_path.push(to);
+
+    if let Some((from_repo, from_rel)) = relative_to_repo(& mut from_path) {
+        if let Some((to_repo, to_rel)) = relative_to_repo(& mut to_path) {
+
+            // Remove the destionation if it exists
+            if to_path.exists() {
+                let output = process::Command::new("git")
+                    .args(&["rm", to_rel.as_str()])
+                    .current_dir(to_repo.clone())
+                    .output()
+                    .unwrap();
+
+                write_to_stderr(&to_repo, &output.stderr);
+            }
+        }
+    }
 }
 
 //------------------------------------------------------------------------------
