@@ -560,13 +560,12 @@ fn ls(regex: &regex::Regex, branch_regex: &BranchRegex) {
     for path in RepoIterator::new(regex) {
 
         if let Some(pattern) = branch_regex {
-            if !filter_branch(&pattern, &path) {
-                return;
+            if filter_branch(&pattern, &path) {
+                let display = path.as_path().to_str().unwrap();
+                println!("{0}", display);
             }
         }
 
-        let display = path.as_path().to_str().unwrap();
-        println!("{0}", display);
     }
 }
 
