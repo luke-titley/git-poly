@@ -4,7 +4,7 @@ build:
         - yum install -y curl
         - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs > ./install_rustup.sh
         - echo '' | bash ./install_rustup.sh -y
-        - export PATH "/root/.cargo/bin:${PATH}"
+        - export PATH="/root/.cargo/bin:${PATH}"
         - cargo build --release
     artifacts:
         paths:
