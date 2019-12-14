@@ -600,19 +600,32 @@ fn commit(regex: &regex::Regex, branch_regex: &BranchRegex, msg : &str) {
 
             write_to_stderr(&path, &output.stderr);
 
+            // Search for modifications
             let stdout = io::BufReader::new(&output.stdout as &[u8]);
-            for line_result in stdout.lines() {
-                let line = line_result.unwrap();
-                if c.is_match(line.as_str()) {
-                    let output = process::Command::new("git")
-                        .args(&["commit", "-m", message.as_str()])
-                        .current_dir(path.clone())
-                        .output()
-                        .unwrap();
-
-                    write_to_stderr(&path, &output.stderr);
-                    write_to_stdout(&path, &output.stdout);
+            let mut lines = stdout.lines();
+            let has_modifications = {
+                loop {
+                    if let Some(result) = lines.next() {
+                        let line = result.unwrap();
+                        if c.is_match(line.as_str()) {
+                            break true;
+                        }
+                    } else {
+                        break false;
+                    }
                 }
+            };
+
+            // If we have modifications then do a commit
+            if has_modifications {
+                let output = process::Command::new("git")
+                    .args(&["commit", "-m", message.as_str()])
+                    .current_dir(path.clone())
+                    .output()
+                    .unwrap();
+
+                write_to_stderr(&path, &output.stderr);
+                write_to_stdout(&path, &output.stdout);
             }
         }));
     }
