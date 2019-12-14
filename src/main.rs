@@ -42,11 +42,11 @@ OPTIONS:
 SUBCOMMANDS
     go [git command]          Execute git commands in each repo
     cmd [comands]             Execute one or more shell commands in each repo
+    ls                        List all the git repos discovered
 
     add [-u] [<pathspec>...]  Add file contents to the index of it's repo
     commit [-m] <message>     Record changes to the repository
     grep <pattern>            Print lines matching a pattern
-    ls                        List all the git repos discovered
     ls-files                  Show information about files in the index and the working tree
     mv <from> <to>            Move or rename a file, a directory, or a symlink
     status                    Show the merged working tree status of all the repos
