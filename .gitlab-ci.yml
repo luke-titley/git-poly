@@ -1,0 +1,7 @@
+build:
+    script:
+        - cargo build --release
+    artifacts:
+        paths:
+            - target/release/git-poly
+        expire_in: 1 week
