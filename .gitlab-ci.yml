@@ -9,5 +9,5 @@ build:
         - cargo build --release
     artifacts:
         paths:
-            - target/release/git-poly
+            - target/release/git-p
         expire_in: 1 week
