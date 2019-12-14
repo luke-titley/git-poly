@@ -529,8 +529,6 @@ fn grep(regex: &regex::Regex, branch_regex: &BranchRegex, expression : &str) {
 
 //------------------------------------------------------------------------------
 fn add(regex: &regex::Regex, args_pos: usize) {
-    let mut threads = Vec::new();
-
     let args: Vec<String> = env::args().collect();
 
     let mut minus_u = false;
@@ -544,14 +542,9 @@ fn add(regex: &regex::Regex, args_pos: usize) {
             },
             file_path => {
                 let mut path = path::PathBuf::from(file_path);
-                threads.push(thread::spawn(move || add_file(& mut path)));
+                add_file(& mut path);
             }
         }
-    }
-
-    // Wait for all the threads to finish
-    for thread in threads {
-        thread.join().unwrap();
     }
 }
 
