@@ -558,6 +558,13 @@ fn add(regex: &regex::Regex, args_pos: usize) {
 //------------------------------------------------------------------------------
 fn ls(regex: &regex::Regex, branch_regex: &BranchRegex) {
     for path in RepoIterator::new(regex) {
+
+        if let Some(pattern) = branch_regex {
+            if !filter_branch(&pattern, &path) {
+                return;
+            }
+        }
+
         let display = path.as_path().to_str().unwrap();
         println!("{0}", display);
     }
