@@ -256,15 +256,16 @@ fn write_to_stdout(repo: &path::PathBuf, output: &[u8]) -> Result<()> {
 }
 
 //------------------------------------------------------------------------------
-fn write_to_stderr(repo: &path::PathBuf, output: &[u8]) {
+fn write_to_stderr(repo: &path::PathBuf, output: &[u8]) -> Result<()> {
     // stderr
     if !output.is_empty() {
         let stderr = io::stderr();
         {
             let mut handle = stderr.lock();
-            write_to_out(&mut handle, repo, output).unwrap();
+            write_to_out(&mut handle, repo, output)?;
         }
     }
+    Ok(())
 }
 
 //------------------------------------------------------------------------------
