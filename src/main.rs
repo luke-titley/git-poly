@@ -232,8 +232,8 @@ fn write_to_out(
     handle: &mut dyn io::Write,
     repo: &path::PathBuf,
     output: &[u8],
-) -> io::Result<()> {
-    let display = repo.as_path().to_str().unwrap();
+) -> Result<()> {
+    let display = get(repo.as_path().to_str())?;
 
     writeln!(handle, "{0}", display.cyan())?;
     handle.write_all(&output)?;
@@ -243,15 +243,16 @@ fn write_to_out(
 }
 
 //------------------------------------------------------------------------------
-fn write_to_stdout(repo: &path::PathBuf, output: &[u8]) {
+fn write_to_stdout(repo: &path::PathBuf, output: &[u8]) -> Result<()> {
     // stdout
     if !output.is_empty() {
         let stdout = io::stdout();
         {
             let mut handle = stdout.lock();
-            write_to_out(&mut handle, repo, output).unwrap();
+            write_to_out(&mut handle, repo, output)?;
         }
     }
+    Ok(())
 }
 
 //------------------------------------------------------------------------------
