@@ -19,7 +19,6 @@ use std::io::Write;
 use colored::*;
 
 type Paths = vec::Vec<path::PathBuf>;
-type Error = io::Result<()>;
 type StatusMsg = (String, String, String);
 type StatusSender = mpsc::Sender<StatusMsg>;
 type StatusReceiver = mpsc::Receiver<StatusMsg>;
@@ -27,6 +26,13 @@ type PathMsg = Option<path::PathBuf>;
 type PathSender = mpsc::Sender<PathMsg>;
 type PathReceiver = mpsc::Receiver<PathMsg>;
 type BranchRegex = Option<regex::Regex>;
+
+use snafu::Snafu;
+
+#[derive(Debug, Snafu)]
+enum Error {}
+
+type Result<R> = std::result::Result<R, Error>;
 
 //------------------------------------------------------------------------------
 // Usage
@@ -69,7 +75,7 @@ fn argument_error(msg: &str) {
 //------------------------------------------------------------------------------
 // list_repos
 //------------------------------------------------------------------------------
-fn list_repos(regex: &regex::Regex, send: &PathSender) -> Error {
+fn list_repos(regex: &regex::Regex, send: &PathSender) -> Result<()> {
     let mut current_dir = path::PathBuf::new();
     current_dir.push(".");
 
@@ -83,7 +89,7 @@ fn list_repos(regex: &regex::Regex, send: &PathSender) -> Error {
         match fs::read_dir(path.clone()) {
             Ok(dir) => {
                 for entry in dir {
-                    let p = entry?.path();
+                    let p = entry.unwrap().path();
                     if p.is_dir() {
                         let mut p_buf = p.to_path_buf();
                         let name = p.file_name().unwrap().to_str();
@@ -872,7 +878,7 @@ impl Flags {
 }
 
 //------------------------------------------------------------------------------
-fn main() -> Error {
+fn main() -> Result<()> {
     // The flags
     let mut flags = Flags::new();
 
