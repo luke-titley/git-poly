@@ -1012,7 +1012,7 @@ Maybe you wanted to say 'git add .'?";
                     break;
                 }
                 "reset" => {
-                    reset(&flags.path, &flags.branch, index);
+                    reset(&flags.path, &flags.branch, index+1);
                     break;
                 }
                 "status" => {
