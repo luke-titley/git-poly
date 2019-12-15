@@ -827,14 +827,7 @@ fn mv(from: &str, to: &str) {
                 }
 
                 // Move the file
-                fs::rename(&from_path, &to_path);
-                /*
-                if from_path.is_dir() {
-                    fs_extra::dir::copy(&from_path, &to_path, &fs_extra::dir::CopyOptions::new()).unwrap();
-                } else {
-                    fs::copy(&from_path, &to_path).unwrap();
-                }
-                */
+                fs::rename(&from_path, &to_path).unwrap();
 
                 // Remove the old file or folder
                 {
