@@ -269,12 +269,11 @@ fn write_to_stderr(repo: &path::PathBuf, output: &[u8]) -> Result<()> {
 }
 
 //------------------------------------------------------------------------------
-fn get_branch_name(path: &path::PathBuf) -> String {
+fn get_branch_name(path: &path::PathBuf) -> Result<String> {
     let output = process::Command::new("git")
         .args(&["rev-parse", "--abbrev-ref", "HEAD"])
         .current_dir(path.clone())
-        .output()
-        .unwrap();
+        .output()?;
 
     write_to_stderr(&path, &output.stderr);
 
@@ -282,15 +281,15 @@ fn get_branch_name(path: &path::PathBuf) -> String {
     let result: Vec<_> = stdout.lines().collect();
 
     if result.is_empty() {
-        return "HEADLESS".to_string();
+        return Ok("HEADLESS".to_string());
     }
 
-    result[0].as_ref().unwrap().to_string()
+    Ok(result[0].as_ref().unwrap().to_string())
 }
 
 //------------------------------------------------------------------------------
 fn filter_branch(expression: &regex::Regex, path: &path::PathBuf) -> bool {
-    let branch_name = get_branch_name(path);
+    let branch_name = get_branch_name(path).unwrap();
 
     expression.is_match(branch_name.as_str())
 }
@@ -800,7 +799,7 @@ fn status(regex: &regex::Regex, branch_regex: &BranchRegex) {
                 }
             }
 
-            let branch_name = get_branch_name(&path);
+            let branch_name = get_branch_name(&path).unwrap();
 
             let args = ["status", "--porcelain"];
             let output = process::Command::new("git")
