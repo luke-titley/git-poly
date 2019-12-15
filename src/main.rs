@@ -208,7 +208,8 @@ fn get_branch_name(path: &path::PathBuf) -> String {
 //------------------------------------------------------------------------------
 fn filter_branch(expression: &regex::Regex, path: &path::PathBuf) -> bool {
     let branch_name = get_branch_name(path);
-    return expression.is_match(branch_name.as_str());
+
+    expression.is_match(branch_name.as_str())
 }
 
 //------------------------------------------------------------------------------
@@ -532,8 +533,8 @@ fn add(regex: &regex::Regex, args_pos: usize) {
     let args: Vec<String> = env::args().collect();
 
     let mut minus_u = false;
-    for arg in args_pos + 1..args.len() {
-        match args[arg].as_str() {
+    for item in args.iter().skip(args_pos + 1) {
+        match item.as_str() {
             "-u" => {
                 if !minus_u {
                     minus_u = true;
@@ -670,13 +671,13 @@ fn print_title(title: char) -> &'static str {
             println!("Changes not staged for commit:");
             println!("  (use \"git add <file>...\" to include in what will be committed)");
             println!();
-            return "red";
+            "red"
         }
         '?' => {
             println!("Untracked files:");
             println!("  (use \"git add <file>...\" to include in what will be committed)");
             println!();
-            return "red";
+            "red"
         }
         'U' => {
             println!("You have unmerged paths.");
@@ -685,12 +686,12 @@ fn print_title(title: char) -> &'static str {
             println!();
             println!("Unmerged paths:");
             println!("  (use \"git add <file>...\" to mark resolution)");
-            return "red";
+            "red"
         }
         _ => {
             println!("Changes to be commited:");
             println!();
-            return "green";
+            "green"
         }
     }
 }
