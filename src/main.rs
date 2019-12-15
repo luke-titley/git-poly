@@ -421,10 +421,27 @@ fn relative_to_repo(path : & mut path::PathBuf) -> Option<(path::PathBuf, String
 }
 
 //------------------------------------------------------------------------------
-fn add_file(path : & mut path::PathBuf) {
+fn add_entry(path : & mut path::PathBuf) {
     if let Some((repo, relative_path)) = relative_to_repo(path) {
 
         let args = ["add", relative_path.as_str()];
+        let output = process::Command::new("git")
+            .args(&args)
+            .current_dir(repo.clone())
+            .output()
+            .unwrap();
+
+        // stdout/stderr
+        write_to_stdout(&repo, &output.stdout);
+        write_to_stderr(&repo, &output.stderr);
+    }
+}
+
+//------------------------------------------------------------------------------
+fn reset_entry(path : & mut path::PathBuf) {
+    if let Some((repo, relative_path)) = relative_to_repo(path) {
+
+        let args = ["reset", relative_path.as_str()];
         let output = process::Command::new("git")
             .args(&args)
             .current_dir(repo.clone())
@@ -526,7 +543,6 @@ fn grep(regex: &regex::Regex, branch_regex: &BranchRegex, expression : &str) {
     }
 }
 
-
 //------------------------------------------------------------------------------
 fn add(regex: &regex::Regex, args_pos: usize) {
     let args: Vec<String> = env::args().collect();
@@ -542,9 +558,47 @@ fn add(regex: &regex::Regex, args_pos: usize) {
             },
             file_path => {
                 let mut path = path::PathBuf::from(file_path);
-                add_file(& mut path);
+                add_entry(& mut path);
             }
         }
+    }
+}
+
+//------------------------------------------------------------------------------
+fn reset_all(regex: &regex::Regex, branch_regex: &BranchRegex) {
+
+    // Filtered traversal
+    if let Some(pattern) = branch_regex {
+        for path in RepoIterator::new(regex) {
+            if filter_branch(&pattern, &path) {
+                let display = path.as_path().to_str().unwrap();
+                println!("{0}", display);
+            }
+        }
+
+    // Unfiltered traversal
+    } else {
+        for path in RepoIterator::new(regex) {
+            let display = path.as_path().to_str().unwrap();
+            println!("{0}", display);
+        }
+    }
+}
+
+//------------------------------------------------------------------------------
+fn reset(regex: &regex::Regex, branch_regex: &BranchRegex, args_pos: usize) {
+    let args: Vec<String> = env::args().collect();
+
+    // Reset individual files
+    if args.len() - args_pos+1 > 0 {
+        for arg in args_pos+1..args.len() {
+                let mut path = path::PathBuf::from(args[arg].clone());
+                reset_entry(& mut path);
+        }
+
+    // Reset all the repos
+    } else {
+        reset_all(regex, branch_regex);
     }
 }
 
@@ -567,7 +621,6 @@ fn ls(regex: &regex::Regex, branch_regex: &BranchRegex) {
             println!("{0}", display);
         }
     }
-
 }
 
 //------------------------------------------------------------------------------
