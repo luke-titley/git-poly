@@ -438,23 +438,6 @@ fn add_entry(path : & mut path::PathBuf) {
 }
 
 //------------------------------------------------------------------------------
-fn reset_entry(path : & mut path::PathBuf) {
-    if let Some((repo, relative_path)) = relative_to_repo(path) {
-
-        let args = ["reset", relative_path.as_str()];
-        let output = process::Command::new("git")
-            .args(&args)
-            .current_dir(repo.clone())
-            .output()
-            .unwrap();
-
-        // stdout/stderr
-        write_to_stdout(&repo, &output.stdout);
-        write_to_stderr(&repo, &output.stderr);
-    }
-}
-
-//------------------------------------------------------------------------------
 fn ls_files(regex: &regex::Regex, branch_regex: &BranchRegex) {
     let mut threads = Vec::new();
 
@@ -565,40 +548,33 @@ fn add(regex: &regex::Regex, args_pos: usize) {
 }
 
 //------------------------------------------------------------------------------
-fn reset_all(regex: &regex::Regex, branch_regex: &BranchRegex) {
+fn reset_all(path : path::PathBuf) {
+    let output = process::Command::new("git")
+        .args(&["reset"])
+        .current_dir(path.clone())
+        .output()
+        .unwrap();
 
+    // stdout/stderr
+    write_to_stdout(&path, &output.stdout);
+    write_to_stderr(&path, &output.stderr);
+}
+
+//------------------------------------------------------------------------------
+fn reset(regex: &regex::Regex, branch_regex: &BranchRegex) {
     // Filtered traversal
     if let Some(pattern) = branch_regex {
         for path in RepoIterator::new(regex) {
             if filter_branch(&pattern, &path) {
-                let display = path.as_path().to_str().unwrap();
-                println!("Resetting {0}", display);
+                reset_all(path);
             }
         }
 
     // Unfiltered traversal
     } else {
         for path in RepoIterator::new(regex) {
-            let display = path.as_path().to_str().unwrap();
-            println!("Resetting {0}", display);
+            reset_all(path);
         }
-    }
-}
-
-//------------------------------------------------------------------------------
-fn reset(regex: &regex::Regex, branch_regex: &BranchRegex, args_pos: usize) {
-    let args: Vec<String> = env::args().collect();
-
-    // Reset individual files
-    if args.len() - args_pos+1 > 0 {
-        for arg in args_pos+1..args.len() {
-                let mut path = path::PathBuf::from(args[arg].clone());
-                reset_entry(& mut path);
-        }
-
-    // Reset all the repos
-    } else {
-        reset_all(regex, branch_regex);
     }
 }
 
@@ -1012,7 +988,7 @@ Maybe you wanted to say 'git add .'?";
                     break;
                 }
                 "reset" => {
-                    reset(&flags.path, &flags.branch, index+1);
+                    reset(&flags.path, &flags.branch);
                     break;
                 }
                 "status" => {
