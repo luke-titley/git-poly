@@ -119,20 +119,21 @@ fn list_repos(regex: &regex::Regex, send: &PathSender) -> Result<()> {
                     let p = entry?.path();
                     if p.is_dir() {
                         let mut p_buf = p.to_path_buf();
-                        let name = p.file_name().unwrap().to_str();
-                        match name {
-                            Some(".git") => {
-                                // We've found a git repo, send it back
-                                p_buf.pop();
-                                let repo_path = p_buf.as_path();
-                                if regex
-                                    .is_match(repo_path.to_str().unwrap())
-                                {
-                                    send.send(Some(p_buf)).unwrap();
+                        if let Some(name) = p.file_name() {
+                            match name.to_str() {
+                                Some(".git") => {
+                                    // We've found a git repo, send it back
+                                    p_buf.pop();
+                                    let repo_path = p_buf.as_path();
+                                    if regex
+                                        .is_match(repo_path.to_str().unwrap())
+                                    {
+                                        send.send(Some(p_buf)).unwrap();
+                                    }
                                 }
-                            }
-                            _ => {
-                                paths.push(p_buf);
+                                _ => {
+                                    paths.push(p_buf);
+                                }
                             }
                         }
                     }
