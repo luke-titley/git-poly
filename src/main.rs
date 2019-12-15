@@ -112,38 +112,36 @@ fn list_repos(regex: &regex::Regex, send: &PathSender) -> Result<()> {
     paths.push(current_dir);
 
     // Walk over the directory
-    while !paths.is_empty() {
-        if let Some(path) = paths.pop() {
-            match fs::read_dir(path.clone()) {
-                Ok(dir) => {
-                    for entry in dir {
-                        let p = entry?.path();
-                        if p.is_dir() {
-                            let mut p_buf = p.to_path_buf();
-                            let name = p.file_name().unwrap().to_str();
-                            match name {
-                                Some(".git") => {
-                                    // We've found a git repo, send it back
-                                    p_buf.pop();
-                                    let repo_path = p_buf.as_path();
-                                    if regex
-                                        .is_match(repo_path.to_str().unwrap())
-                                    {
-                                        send.send(Some(p_buf)).unwrap();
-                                    }
+    while let Some(path) = paths.pop() {
+        match fs::read_dir(path.clone()) {
+            Ok(dir) => {
+                for entry in dir {
+                    let p = entry?.path();
+                    if p.is_dir() {
+                        let mut p_buf = p.to_path_buf();
+                        let name = p.file_name().unwrap().to_str();
+                        match name {
+                            Some(".git") => {
+                                // We've found a git repo, send it back
+                                p_buf.pop();
+                                let repo_path = p_buf.as_path();
+                                if regex
+                                    .is_match(repo_path.to_str().unwrap())
+                                {
+                                    send.send(Some(p_buf)).unwrap();
                                 }
-                                _ => {
-                                    paths.push(p_buf);
-                                }
+                            }
+                            _ => {
+                                paths.push(p_buf);
                             }
                         }
                     }
                 }
-                Err(error) => {
-                    let mut stderr = std::io::stderr();
-                    writeln!(stderr, "{0} '{1}'", error, path.display())
-                        .unwrap();
-                }
+            }
+            Err(error) => {
+                let mut stderr = std::io::stderr();
+                writeln!(stderr, "{0} '{1}'", error, path.display())
+                    .unwrap();
             }
         }
     }
