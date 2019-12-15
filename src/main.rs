@@ -159,13 +159,13 @@ fn list_repos(regex: &regex::Regex, send: &PathSender) -> Result<()> {
             }
             Err(error) => {
                 let mut stderr = std::io::stderr();
-                writeln!(stderr, "{0} '{1}'", error, path.display()).unwrap();
+                writeln!(stderr, "{0} '{1}'", error, path.display())?;
             }
         }
     }
 
     // Send an empty message to say we're done
-    send.send(None).unwrap();
+    send.send(None)?;
 
     Ok(())
 }
