@@ -49,6 +49,7 @@ SUBCOMMANDS
     grep <pattern>            Print lines matching a pattern
     ls-files                  Show information about files in the index and the working tree
     mv <from> <to>            Move or rename a file, a directory, or a symlink
+    reset                     Reset current HEAD to the specified state
     status                    Show the merged working tree status of all the repos
 
     replace <from> <to>       Find and replace all occurances of FROM with TO
