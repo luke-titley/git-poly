@@ -3,6 +3,7 @@
 //------------------------------------------------------------------------------
 use regex;
 use std::env;
+use std::fmt;
 use std::fs;
 use std::io;
 use std::iter::FromIterator;
@@ -29,6 +30,7 @@ type BranchRegex = Option<regex::Regex>;
 
 type PathSendError =
     std::sync::mpsc::SendError<std::option::Option<std::path::PathBuf>>;
+type RecvError = std::sync::mpsc::RecvError;
 
 //------------------------------------------------------------------------------
 // Error
@@ -38,6 +40,14 @@ enum Error {
     NoneError(),
     IOError(io::Error),
     PathSendError(PathSendError),
+    RecvError(RecvError),
+}
+
+//------------------------------------------------------------------------------
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Error")
+    }
 }
 
 fn get<S>(option: Option<S>) -> Result<S> {
@@ -76,6 +86,13 @@ impl From<PathSendError> for Error {
 impl From<io::Error> for Error {
     fn from(error: io::Error) -> Self {
         Error::IOError(error)
+    }
+}
+
+//------------------------------------------------------------------------------
+impl From<RecvError> for Error {
+    fn from(error: RecvError) -> Self {
+        Error::RecvError(error)
     }
 }
 
@@ -184,7 +201,11 @@ impl RepoIterator {
 
         // Kick off the traversal thread. It's detached by default.
         let regex_copy = regex.clone();
-        thread::spawn(move || list_repos(&regex_copy, &send).unwrap());
+        thread::spawn(move || {
+            if let Err(error) = list_repos(&regex_copy, &send) {
+                writeln!(std::io::stderr(), "{0}", error).unwrap();
+            }
+        });
 
         // Make the new thread object
         RepoIterator { recv }
@@ -196,7 +217,13 @@ impl Iterator for RepoIterator {
     type Item = path::PathBuf;
 
     fn next(&mut self) -> Option<Self::Item> {
-        self.recv.recv().unwrap()
+        match self.recv.recv() {
+            Ok(result) => result,
+            Err(error) => {
+                writeln!(std::io::stderr(), "{0}", error).unwrap();
+                None
+            }
+        }
     }
 }
 
