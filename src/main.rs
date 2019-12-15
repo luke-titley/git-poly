@@ -32,9 +32,17 @@ type BranchRegex = Option<regex::Regex>;
 //------------------------------------------------------------------------------
 #[derive(Debug)]
 enum Error {
-    //    NoneError(std::option::NoneError),
+    NoneError(),
     IOError(io::Error),
 }
+
+fn get<S>(option: Option<S>) -> Result<S> {
+    match option {
+        Some(value) => Ok(value),
+        None => Err(Error::NoneError()),
+    }
+}
+
 /*
 //------------------------------------------------------------------------------
 impl From<zebra> for Error {
@@ -125,8 +133,7 @@ fn list_repos(regex: &regex::Regex, send: &PathSender) -> Result<()> {
                                     // We've found a git repo, send it back
                                     p_buf.pop();
                                     let repo_path = p_buf.as_path();
-                                    if regex
-                                        .is_match(repo_path.to_str().unwrap())
+                                    if regex.is_match(get(repo_path.to_str())?)
                                     {
                                         send.send(Some(p_buf)).unwrap();
                                     }
@@ -141,8 +148,7 @@ fn list_repos(regex: &regex::Regex, send: &PathSender) -> Result<()> {
             }
             Err(error) => {
                 let mut stderr = std::io::stderr();
-                writeln!(stderr, "{0} '{1}'", error, path.display())
-                    .unwrap();
+                writeln!(stderr, "{0} '{1}'", error, path.display()).unwrap();
             }
         }
     }
