@@ -27,6 +27,9 @@ type PathSender = mpsc::Sender<PathMsg>;
 type PathReceiver = mpsc::Receiver<PathMsg>;
 type BranchRegex = Option<regex::Regex>;
 
+type PathSendError =
+    std::sync::mpsc::SendError<std::option::Option<std::path::PathBuf>>;
+
 //------------------------------------------------------------------------------
 // Error
 //------------------------------------------------------------------------------
@@ -34,6 +37,7 @@ type BranchRegex = Option<regex::Regex>;
 enum Error {
     NoneError(),
     IOError(io::Error),
+    PathSendError(PathSendError),
 }
 
 fn get<S>(option: Option<S>) -> Result<S> {
@@ -60,6 +64,13 @@ impl From<std::option::NoneError> for Error {
     }
 }
 */
+
+//------------------------------------------------------------------------------
+impl From<PathSendError> for Error {
+    fn from(error: PathSendError) -> Self {
+        Error::PathSendError(error)
+    }
+}
 
 //------------------------------------------------------------------------------
 impl From<io::Error> for Error {
@@ -135,7 +146,7 @@ fn list_repos(regex: &regex::Regex, send: &PathSender) -> Result<()> {
                                     let repo_path = p_buf.as_path();
                                     if regex.is_match(get(repo_path.to_str())?)
                                     {
-                                        send.send(Some(p_buf)).unwrap();
+                                        send.send(Some(p_buf))?;
                                     }
                                 }
                                 _ => {
