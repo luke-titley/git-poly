@@ -572,7 +572,7 @@ fn reset_all(regex: &regex::Regex, branch_regex: &BranchRegex) {
         for path in RepoIterator::new(regex) {
             if filter_branch(&pattern, &path) {
                 let display = path.as_path().to_str().unwrap();
-                println!("{0}", display);
+                println!("Resetting {0}", display);
             }
         }
 
@@ -580,7 +580,7 @@ fn reset_all(regex: &regex::Regex, branch_regex: &BranchRegex) {
     } else {
         for path in RepoIterator::new(regex) {
             let display = path.as_path().to_str().unwrap();
-            println!("{0}", display);
+            println!("Resetting {0}", display);
         }
     }
 }
@@ -1009,6 +1009,10 @@ Maybe you wanted to say 'git add .'?";
                     }
 
                     commit(&flags.path, &flags.branch, args[index + 2].as_str());
+                    break;
+                }
+                "reset" => {
+                    reset(&flags.path, &flags.branch, index);
                     break;
                 }
                 "status" => {
