@@ -6,9 +6,9 @@ use std::env;
 use std::fs;
 use std::io;
 use std::iter::FromIterator;
-use std::str::FromStr;
 use std::path;
 use std::process;
+use std::str::FromStr;
 use std::sync::mpsc;
 use std::thread;
 use std::vec;
@@ -205,7 +205,7 @@ fn get_branch_name(path: &path::PathBuf) -> String {
 }
 
 //------------------------------------------------------------------------------
-fn filter_branch(expression : &regex::Regex, path: &path::PathBuf) -> bool {
+fn filter_branch(expression: &regex::Regex, path: &path::PathBuf) -> bool {
     let branch_name = get_branch_name(path);
     return expression.is_match(branch_name.as_str());
 }
@@ -225,7 +225,6 @@ fn replace(regex: &regex::Regex, branch_regex: &BranchRegex, args_pos: usize) {
 
         // Execute a new thread for processing this result
         let thread = thread::spawn(move || {
-
             // Filter based on branch name
             if let Some(pattern) = branch_filter {
                 if !filter_branch(&pattern, &path) {
@@ -301,7 +300,6 @@ fn go(path_regex: &regex::Regex, branch_regex: &BranchRegex, args_pos: usize) {
 
         // Execute a new thread for processing this result
         let thread = thread::spawn(move || {
-
             // Filter based on branch name
             if let Some(pattern) = branch_filter {
                 if !filter_branch(&pattern, &path) {
@@ -340,7 +338,6 @@ fn cmd(regex: &regex::Regex, branch_regex: &BranchRegex, args_pos: usize) {
 
         // Execute a new thread for processing this result
         let thread = thread::spawn(move || {
-
             // Filter based on branch name
             if let Some(pattern) = branch_filter {
                 if !filter_branch(&pattern, &path) {
@@ -400,10 +397,11 @@ fn add_changed(regex: &regex::Regex) {
 }
 
 //------------------------------------------------------------------------------
-fn relative_to_repo(path : & mut path::PathBuf) -> Option<(path::PathBuf, String)> {
-
+fn relative_to_repo(
+    path: &mut path::PathBuf,
+) -> Option<(path::PathBuf, String)> {
     for parent in path.ancestors() {
-        if ! parent.as_os_str().is_empty() {
+        if !parent.as_os_str().is_empty() {
             let mut repo = path::PathBuf::new(); // TODO LT: Wanted to keep this around but need nightly to use 'clear'.
             repo.push(parent);
             repo.pop();
@@ -411,8 +409,13 @@ fn relative_to_repo(path : & mut path::PathBuf) -> Option<(path::PathBuf, String
 
             if repo.exists() {
                 repo.pop();
-                let relative_path = path.as_path().strip_prefix(repo.as_path()).unwrap().to_str().unwrap();
-                return Some(( repo, relative_path.to_string() ));
+                let relative_path = path
+                    .as_path()
+                    .strip_prefix(repo.as_path())
+                    .unwrap()
+                    .to_str()
+                    .unwrap();
+                return Some((repo, relative_path.to_string()));
             }
         }
     }
@@ -421,9 +424,8 @@ fn relative_to_repo(path : & mut path::PathBuf) -> Option<(path::PathBuf, String
 }
 
 //------------------------------------------------------------------------------
-fn add_entry(path : & mut path::PathBuf) {
+fn add_entry(path: &mut path::PathBuf) {
     if let Some((repo, relative_path)) = relative_to_repo(path) {
-
         let args = ["add", relative_path.as_str()];
         let output = process::Command::new("git")
             .args(&args)
@@ -446,7 +448,6 @@ fn ls_files(regex: &regex::Regex, branch_regex: &BranchRegex) {
         let branch_filter = branch_regex.clone();
 
         threads.push(thread::spawn(move || {
-
             // Filter based on branch name
             if let Some(pattern) = branch_filter {
                 if !filter_branch(&pattern, &path) {
@@ -466,7 +467,7 @@ fn ls_files(regex: &regex::Regex, branch_regex: &BranchRegex) {
             {
                 let _handle = outstream.lock();
                 let stdout = io::BufReader::new(&output.stdout as &[u8]);
-                let flat_path = path.as_path().join( path::Path::new("") );
+                let flat_path = path.as_path().join(path::Path::new(""));
                 for line in stdout.lines() {
                     print!("{0}", flat_path.display());
                     println!("{0}", line.unwrap());
@@ -482,7 +483,7 @@ fn ls_files(regex: &regex::Regex, branch_regex: &BranchRegex) {
 }
 
 //------------------------------------------------------------------------------
-fn grep(regex: &regex::Regex, branch_regex: &BranchRegex, expression : &str) {
+fn grep(regex: &regex::Regex, branch_regex: &BranchRegex, expression: &str) {
     let mut threads = Vec::new();
 
     // Loop through the results of what the walker is outputting
@@ -491,7 +492,6 @@ fn grep(regex: &regex::Regex, branch_regex: &BranchRegex, expression : &str) {
         let branch_filter = branch_regex.clone();
 
         threads.push(thread::spawn(move || {
-
             // Filter based on branch name
             if let Some(pattern) = branch_filter {
                 if !filter_branch(&pattern, &path) {
@@ -511,7 +511,7 @@ fn grep(regex: &regex::Regex, branch_regex: &BranchRegex, expression : &str) {
             {
                 let _handle = outstream.lock();
                 let stdout = io::BufReader::new(&output.stdout as &[u8]);
-                let flat_path = path.as_path().join( path::Path::new("") );
+                let flat_path = path.as_path().join(path::Path::new(""));
                 for line in stdout.lines() {
                     print!("{0}", flat_path.display());
                     println!("{0}", line.unwrap());
@@ -531,24 +531,24 @@ fn add(regex: &regex::Regex, args_pos: usize) {
     let args: Vec<String> = env::args().collect();
 
     let mut minus_u = false;
-    for arg in args_pos+1..args.len() {
+    for arg in args_pos + 1..args.len() {
         match args[arg].as_str() {
             "-u" => {
-                if ! minus_u {
+                if !minus_u {
                     minus_u = true;
                     add_changed(regex)
                 }
-            },
+            }
             file_path => {
                 let mut path = path::PathBuf::from(file_path);
-                add_entry(& mut path);
+                add_entry(&mut path);
             }
         }
     }
 }
 
 //------------------------------------------------------------------------------
-fn reset_all(path : path::PathBuf) {
+fn reset_all(path: path::PathBuf) {
     let output = process::Command::new("git")
         .args(&["reset"])
         .current_dir(path.clone())
@@ -580,7 +580,6 @@ fn reset(regex: &regex::Regex, branch_regex: &BranchRegex) {
 
 //------------------------------------------------------------------------------
 fn ls(regex: &regex::Regex, branch_regex: &BranchRegex) {
-
     // Filtered traversal
     if let Some(pattern) = branch_regex {
         for path in RepoIterator::new(regex) {
@@ -600,19 +599,17 @@ fn ls(regex: &regex::Regex, branch_regex: &BranchRegex) {
 }
 
 //------------------------------------------------------------------------------
-fn commit(regex: &regex::Regex, branch_regex: &BranchRegex, msg : &str) {
+fn commit(regex: &regex::Regex, branch_regex: &BranchRegex, msg: &str) {
     let mut threads = Vec::new();
 
-    let changes =
-        regex::Regex::new(r"^(M|A|D) .*").unwrap();
+    let changes = regex::Regex::new(r"^(M|A|D) .*").unwrap();
 
     for path in RepoIterator::new(regex) {
         let message = String::from_str(msg).unwrap();
         let c = changes.clone();
         let branch_filter = branch_regex.clone();
 
-        threads.push( thread::spawn(move || {
-
+        threads.push(thread::spawn(move || {
             // Filter based on branch name
             if let Some(pattern) = branch_filter {
                 if !filter_branch(&pattern, &path) {
@@ -711,7 +708,6 @@ fn status(regex: &regex::Regex, branch_regex: &BranchRegex) {
         let branch_filter = branch_regex.clone();
 
         let thread = thread::spawn(move || {
-            
             // Filter based on branch name
             if let Some(pattern) = branch_filter {
                 if !filter_branch(&pattern, &path) {
@@ -809,18 +805,16 @@ fn status(regex: &regex::Regex, branch_regex: &BranchRegex) {
 }
 
 //------------------------------------------------------------------------------
-fn mv(from : &str, to: &str) {
+fn mv(from: &str, to: &str) {
     let mut from_path = path::PathBuf::new();
     let mut to_path = path::PathBuf::new();
 
     from_path.push(from);
     to_path.push(to);
 
-    if let Some((from_repo, from_rel)) = relative_to_repo(& mut from_path) {
-        if let Some((to_repo, to_rel)) = relative_to_repo(& mut to_path) {
-
+    if let Some((from_repo, from_rel)) = relative_to_repo(&mut from_path) {
+        if let Some((to_repo, to_rel)) = relative_to_repo(&mut to_path) {
             if from_path.exists() {
-
                 // Remove the destionation if it exists
                 if to_path.exists() {
                     let output = process::Command::new("git")
@@ -915,8 +909,7 @@ fn main() -> Error {
                              (ie --path '.*')",
                         );
                     }
-                    flags.path =
-                        regex::Regex::new(&(args[index + 1])).unwrap();
+                    flags.path = regex::Regex::new(&(args[index + 1])).unwrap();
                     skip = 1;
                 }
                 "--branch" | "-b" => {
@@ -940,16 +933,16 @@ fn main() -> Error {
                 }
                 "cmd" => {
                     if index + 1 == args.len() {
-                        argument_error("cmd requires at least one shell command");
+                        argument_error(
+                            "cmd requires at least one shell command",
+                        );
                     }
                     cmd(&flags.path, &flags.branch, index + 1);
                     break;
                 }
                 "add" => {
                     if index + 1 == args.len() {
-
-                        let error =
-"Nothing specified, nothing added.
+                        let error = "Nothing specified, nothing added.
 Maybe you wanted to say 'git add .'?";
                         argument_error(error);
                     }
@@ -960,7 +953,7 @@ Maybe you wanted to say 'git add .'?";
                     if index + 1 == args.len() {
                         argument_error("Please provide the expression you would like to grep for");
                     }
-                    grep(&flags.path, &flags.branch, args[index+1].as_str());
+                    grep(&flags.path, &flags.branch, args[index + 1].as_str());
                     break;
                 }
                 "ls-files" => {
@@ -979,12 +972,14 @@ Maybe you wanted to say 'git add .'?";
                     }
 
                     if args[index + 1] != "-m" {
-                        argument_error(
-                            "commit requires -m",
-                        );
+                        argument_error("commit requires -m");
                     }
 
-                    commit(&flags.path, &flags.branch, args[index + 2].as_str());
+                    commit(
+                        &flags.path,
+                        &flags.branch,
+                        args[index + 2].as_str(),
+                    );
                     break;
                 }
                 "reset" => {
@@ -997,11 +992,9 @@ Maybe you wanted to say 'git add .'?";
                 }
                 "mv" => {
                     if index + 2 >= args.len() {
-                        argument_error(
-                            "mv requires a source and a dest",
-                        );
+                        argument_error("mv requires a source and a dest");
                     }
-                    mv(&args[index + 1], &args[index+2]);
+                    mv(&args[index + 1], &args[index + 2]);
                     break;
                 }
                 "replace" => {
