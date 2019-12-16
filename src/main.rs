@@ -440,7 +440,7 @@ fn go_thread(
 ) -> Result<()> {
     // Filter based on branch name
     if let Some(pattern) = branch_filter {
-        if !filter_branch(&pattern, &path).unwrap() {
+        if !filter_branch(&pattern, &path)? {
             return Ok(());
         }
     }
@@ -449,8 +449,7 @@ fn go_thread(
     let output = process::Command::new("git")
         .args(&args[args_pos + 1..])
         .current_dir(path.clone())
-        .output()
-        .unwrap();
+        .output()?;
 
     // stdout/stderr
     write_to_stdout(&path, &output.stdout);
@@ -480,7 +479,7 @@ fn go(
 
     // Wait for all the threads to finish
     for thread in threads {
-        thread.join().unwrap();
+        thread.join()?;
     }
 
     Ok(())
