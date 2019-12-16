@@ -486,6 +486,34 @@ fn go(
 }
 
 //------------------------------------------------------------------------------
+fn cmd_thread(
+    path: &path::PathBuf,
+    branch_filter: &BranchRegex,
+    args_pos: usize,
+) -> Result<()> {
+    // Filter based on branch name
+    if let Some(pattern) = branch_filter {
+        if !filter_branch(&pattern, &path)? {
+            return Ok(());
+        }
+    }
+
+    let args: Vec<String> = env::args().collect();
+    let args_ref = &args[args_pos + 1..];
+    let output = process::Command::new(args_ref[0].clone())
+        .args(&args_ref[1..])
+        .current_dir(path.clone())
+        .output()
+        .unwrap();
+
+    // stdout/stderr
+    write_to_stdout(&path, &output.stdout);
+    write_to_stderr(&path, &output.stderr);
+
+    Ok(())
+}
+
+//------------------------------------------------------------------------------
 fn cmd(regex: &regex::Regex, branch_regex: &BranchRegex, args_pos: usize) {
     let mut threads = Vec::new();
 
@@ -494,27 +522,8 @@ fn cmd(regex: &regex::Regex, branch_regex: &BranchRegex, args_pos: usize) {
         let branch_filter = branch_regex.clone();
 
         // Execute a new thread for processing this result
-        let thread = thread::spawn(move || {
-            // Filter based on branch name
-            if let Some(pattern) = branch_filter {
-                if !filter_branch(&pattern, &path).unwrap() {
-                    return;
-                }
-            }
-
-            let args: Vec<String> = env::args().collect();
-            let args_ref = &args[args_pos + 1..];
-            let output = process::Command::new(args_ref[0].clone())
-                .args(&args_ref[1..])
-                .current_dir(path.clone())
-                .output()
-                .unwrap();
-
-            // stdout/stderr
-            write_to_stdout(&path, &output.stdout);
-            write_to_stderr(&path, &output.stderr);
-        });
-
+        let thread =
+            thread::spawn(move || cmd_thread(&path, &branch_filter, args_pos));
         threads.push(thread);
     }
 
