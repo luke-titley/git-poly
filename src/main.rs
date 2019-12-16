@@ -503,8 +503,7 @@ fn cmd_thread(
     let output = process::Command::new(args_ref[0].clone())
         .args(&args_ref[1..])
         .current_dir(path.clone())
-        .output()
-        .unwrap();
+        .output()?;
 
     // stdout/stderr
     write_to_stdout(&path, &output.stdout);
@@ -514,7 +513,11 @@ fn cmd_thread(
 }
 
 //------------------------------------------------------------------------------
-fn cmd(regex: &regex::Regex, branch_regex: &BranchRegex, args_pos: usize) {
+fn cmd(
+    regex: &regex::Regex,
+    branch_regex: &BranchRegex,
+    args_pos: usize,
+) -> Result<()> {
     let mut threads = Vec::new();
 
     // Loop through the results of what the walker is outputting
@@ -529,8 +532,10 @@ fn cmd(regex: &regex::Regex, branch_regex: &BranchRegex, args_pos: usize) {
 
     // Wait for all the threads to finish
     for thread in threads {
-        thread.join().unwrap();
+        thread.join()?;
     }
+
+    Ok(())
 }
 
 //------------------------------------------------------------------------------
