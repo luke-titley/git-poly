@@ -198,7 +198,9 @@ fn list_repos(regex: &regex::Regex, send: &PathSender) -> Result<()> {
 //------------------------------------------------------------------------------
 fn handle_errors<R>(result: Result<R>) {
     if let Err(error) = result {
-        writeln!(std::io::stderr(), "{0}", error).unwrap();
+        match writeln!(std::io::stderr(), "{0}", error) {
+            _ => (), // Do nothing
+        }
     }
 }
 
@@ -333,8 +335,7 @@ fn replace_thread(
     let output = process::Command::new("git")
         .args(&args)
         .current_dir(path.clone())
-        .output()
-        .unwrap();
+        .output()?;
 
     // stderr
     write_to_stderr(&path, &output.stderr);
