@@ -235,8 +235,9 @@ impl Iterator for RepoIterator {
         match self.recv.recv() {
             Ok(result) => result,
             Err(error) => {
-                writeln!(std::io::stderr(), "{0}", error).unwrap();
-                None
+                match writeln!(std::io::stderr(), "{0}", error) {
+                    _ => None,
+                }
             }
         }
     }
