@@ -539,32 +539,38 @@ fn cmd(
 }
 
 //------------------------------------------------------------------------------
-fn add_changed(regex: &regex::Regex) {
+fn add_changed_thread(path: &path::PathBuf) -> Result<()> {
+    let output = process::Command::new("git")
+        .args(&["add", "-u"])
+        .current_dir(path.clone())
+        .output()?;
+
+    // stdout/stderr
+    write_to_stdout(&path, &output.stdout);
+    write_to_stderr(&path, &output.stderr);
+
+    Ok(())
+}
+
+//------------------------------------------------------------------------------
+fn add_changed(regex: &regex::Regex) -> Result<()> {
     let mut threads = Vec::new();
 
     // Loop through the results of what the walker is outputting
     for path in RepoIterator::new(regex) {
         // Execute a new thread for processing this result
-        let thread = thread::spawn(move || {
-            let args = ["add", "-u"];
-            let output = process::Command::new("git")
-                .args(&args)
-                .current_dir(path.clone())
-                .output()
-                .unwrap();
-
-            // stdout/stderr
-            write_to_stdout(&path, &output.stdout);
-            write_to_stderr(&path, &output.stderr);
-        });
+        let thread =
+            thread::spawn(move || handle_errors(add_changed_thread(&path)));
 
         threads.push(thread);
     }
 
     // Wait for all the threads to finish
     for thread in threads {
-        thread.join().unwrap();
+        thread.join()?;
     }
+
+    Ok(())
 }
 
 //------------------------------------------------------------------------------
@@ -707,7 +713,7 @@ fn add(regex: &regex::Regex, args_pos: usize) {
             "-u" => {
                 if !minus_u {
                     minus_u = true;
-                    add_changed(regex)
+                    add_changed(regex).unwrap();
                 }
             }
             file_path => {
