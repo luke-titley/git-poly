@@ -393,9 +393,7 @@ fn replace_thread(
 
         // Wait for all the replace threads to finish
         for replace_thread in replace_threads {
-            if let Err(error) = replace_thread.join() {
-                return Err(Error::ThreadError(error));
-            }
+            replace_thread.join()?;
         }
     }
 
@@ -428,7 +426,12 @@ fn replace(
 
     // Wait for all the threads to finish
     for thread in threads {
-        thread.join().unwrap();
+        thread.join()?;
+        /*
+        if let Err(error) = thread.join() {
+            return Err(Error::ThreadError(error));
+        }
+        */
     }
 
     Ok(())
