@@ -311,11 +311,11 @@ fn replace_thread(
     path: &path::PathBuf,
     from: &String,
     to: &String,
-) {
+) -> Result<()> {
     // Filter based on branch name
     if let Some(pattern) = branch_filter {
-        if !filter_branch(&pattern, &path).unwrap() {
-            return;
+        if !filter_branch(&pattern, &path)? {
+            return Ok(());
         }
     }
 
@@ -363,6 +363,8 @@ fn replace_thread(
             replace_thread.join().unwrap();
         }
     }
+
+    Ok(())
 }
 
 //------------------------------------------------------------------------------
@@ -384,7 +386,7 @@ fn replace(
 
         // Execute a new thread for processing this result
         let thread = thread::spawn(move || {
-            replace_thread(&branch_filter, &path, &from, &to)
+            handle_errors(replace_thread(&branch_filter, &path, &from, &to))
         });
         threads.push(thread);
     }
