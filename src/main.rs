@@ -41,7 +41,7 @@ enum Error {
     IOError(io::Error),
     PathSendError(PathSendError),
     RecvError(RecvError),
-    RegexError(regex::Error)
+    RegexError(regex::Error),
 }
 
 //------------------------------------------------------------------------------
@@ -234,11 +234,9 @@ impl Iterator for RepoIterator {
     fn next(&mut self) -> Option<Self::Item> {
         match self.recv.recv() {
             Ok(result) => result,
-            Err(error) => {
-                match writeln!(std::io::stderr(), "{0}", error) {
-                    _ => None,
-                }
-            }
+            Err(error) => match writeln!(std::io::stderr(), "{0}", error) {
+                _ => None,
+            },
         }
     }
 }
@@ -317,6 +315,29 @@ fn filter_branch(
 }
 
 //------------------------------------------------------------------------------
+fn replace_in_file(
+    from_regex: &regex::Regex,
+    to_regex: &String,
+    file_path: &path::Path,
+) -> Result<()> {
+    let mut output = Vec::<u8>::new();
+    {
+        let input = fs::File::open(file_path.clone())?;
+        let buffered = io::BufReader::new(input);
+        for line in buffered.lines() {
+            let old_line = line.unwrap();
+            let new_line =
+                from_regex.replace_all(&old_line as &str, to_regex as &str);
+            writeln!(output, "{0}", new_line).unwrap();
+        }
+    }
+    let mut input = fs::File::create(file_path).unwrap();
+    input.write_all(&output).unwrap();
+
+    Ok(())
+}
+
+//------------------------------------------------------------------------------
 fn replace_thread(
     branch_filter: &BranchRegex,
     path: &path::PathBuf,
@@ -350,19 +371,11 @@ fn replace_thread(
             let from_regex = from_exp.clone();
             let to_regex = to.clone();
             let replace_thread = thread::spawn(move || {
-                let mut output = Vec::<u8>::new();
-                {
-                    let input = fs::File::open(file_path.clone()).unwrap();
-                    let buffered = io::BufReader::new(input);
-                    for line in buffered.lines() {
-                        let old_line = line.unwrap();
-                        let new_line = from_regex
-                            .replace_all(&old_line as &str, &to_regex as &str);
-                        writeln!(output, "{0}", new_line).unwrap();
-                    }
-                }
-                let mut input = fs::File::create(file_path).unwrap();
-                input.write_all(&output).unwrap();
+                handle_errors(replace_in_file(
+                    &from_regex,
+                    &to_regex,
+                    &file_path,
+                ))
             });
 
             replace_threads.push(replace_thread);
