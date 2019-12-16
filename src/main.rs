@@ -45,6 +45,7 @@ enum Error {
     RegexError(regex::Error),
     ThreadError(ThreadError),
     StripPrefixError(path::StripPrefixError),
+    RelativeToRepoError(),
 }
 
 //------------------------------------------------------------------------------
@@ -584,7 +585,7 @@ fn add_changed(regex: &regex::Regex) -> Result<()> {
 //------------------------------------------------------------------------------
 fn relative_to_repo(
     path: &mut path::PathBuf,
-) -> Result<Option<(path::PathBuf, String)>> {
+) -> Result<(path::PathBuf, String)> {
     for parent in path.ancestors() {
         if !parent.as_os_str().is_empty() {
             let mut repo = path::PathBuf::new(); // TODO LT: Wanted to keep this around but need nightly to use 'clear'.
@@ -596,28 +597,28 @@ fn relative_to_repo(
                 repo.pop();
                 let relative_path =
                     get(path.as_path().strip_prefix(repo.as_path())?.to_str())?;
-                return Ok(Some((repo, relative_path.to_string())));
+                return Ok((repo, relative_path.to_string()));
             }
         }
     }
 
-    Ok(None)
+    Err(Error::RelativeToRepoError())
 }
 
 //------------------------------------------------------------------------------
-fn add_entry(path: &mut path::PathBuf) {
-    if let Some((repo, relative_path)) = relative_to_repo(path).unwrap() {
-        let args = ["add", relative_path.as_str()];
-        let output = process::Command::new("git")
-            .args(&args)
-            .current_dir(repo.clone())
-            .output()
-            .unwrap();
+fn add_entry(path: &mut path::PathBuf) -> Result<()> {
+    let (repo, relative_path) = relative_to_repo(path)?;
+    let args = ["add", relative_path.as_str()];
+    let output = process::Command::new("git")
+        .args(&args)
+        .current_dir(repo.clone())
+        .output()?;
 
-        // stdout/stderr
-        write_to_stdout(&repo, &output.stdout);
-        write_to_stderr(&repo, &output.stderr);
-    }
+    // stdout/stderr
+    write_to_stdout(&repo, &output.stdout);
+    write_to_stderr(&repo, &output.stderr);
+
+    Ok(())
 }
 
 //------------------------------------------------------------------------------
@@ -722,7 +723,7 @@ fn add(regex: &regex::Regex, args_pos: usize) {
             }
             file_path => {
                 let mut path = path::PathBuf::from(file_path);
-                add_entry(&mut path);
+                add_entry(&mut path).unwrap();
             }
         }
     }
@@ -993,46 +994,43 @@ fn mv(from: &str, to: &str) {
     from_path.push(from);
     to_path.push(to);
 
-    if let Some((from_repo, from_rel)) =
-        relative_to_repo(&mut from_path).unwrap()
-    {
-        if let Some((to_repo, to_rel)) = relative_to_repo(&mut to_path).unwrap()
+    let (from_repo, from_rel) =
+        relative_to_repo(&mut from_path).unwrap();
+    let (to_repo, to_rel) = relative_to_repo(&mut to_path).unwrap();
+
+    if from_path.exists() {
+        // Remove the destionation if it exists
+        if to_path.exists() {
+            let output = process::Command::new("git")
+                .args(&["rm", "-rf", to_rel.as_str()])
+                .current_dir(to_repo.clone())
+                .output()
+                .unwrap();
+ 
+            write_to_stderr(&to_repo, &output.stderr);
+        }
+ 
+        // Move the file
+        fs::rename(&from_path, &to_path).unwrap();
+ 
+        // Remove the old file or folder
         {
-            if from_path.exists() {
-                // Remove the destionation if it exists
-                if to_path.exists() {
-                    let output = process::Command::new("git")
-                        .args(&["rm", "-rf", to_rel.as_str()])
-                        .current_dir(to_repo.clone())
-                        .output()
-                        .unwrap();
-
-                    write_to_stderr(&to_repo, &output.stderr);
-                }
-
-                // Move the file
-                fs::rename(&from_path, &to_path).unwrap();
-
-                // Remove the old file or folder
-                {
-                    let output = process::Command::new("git")
-                        .args(&["rm", "-rf", from_rel.as_str()])
-                        .current_dir(from_repo.clone())
-                        .output()
-                        .unwrap();
-                    write_to_stderr(&to_repo, &output.stderr);
-                }
-
-                // Add the newfile or folder
-                {
-                    let output = process::Command::new("git")
-                        .args(&["add", to_rel.as_str()])
-                        .current_dir(to_repo.clone())
-                        .output()
-                        .unwrap();
-                    write_to_stderr(&to_repo, &output.stderr);
-                }
-            }
+            let output = process::Command::new("git")
+                .args(&["rm", "-rf", from_rel.as_str()])
+                .current_dir(from_repo.clone())
+                .output()
+                .unwrap();
+            write_to_stderr(&to_repo, &output.stderr);
+        }
+ 
+        // Add the newfile or folder
+        {
+            let output = process::Command::new("git")
+                .args(&["add", to_rel.as_str()])
+                .current_dir(to_repo.clone())
+                .output()
+                .unwrap();
+            write_to_stderr(&to_repo, &output.stderr);
         }
     }
 }
