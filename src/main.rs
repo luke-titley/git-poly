@@ -44,6 +44,7 @@ enum Error {
     RecvError(RecvError),
     RegexError(regex::Error),
     ThreadError(ThreadError),
+    StripPrefixError(path::StripPrefixError),
 }
 
 //------------------------------------------------------------------------------
@@ -69,11 +70,11 @@ impl From<zebra> for Error {
 }
 */
 
-//------------------------------------------------------------------------------
 /*
+//------------------------------------------------------------------------------
 impl From<std::option::NoneError> for Error {
     fn from(error: std::option::NoneError) -> Self {
-        Error::NoneError(error)
+        Error::NoneError()
     }
 }
 */
@@ -110,6 +111,13 @@ impl From<regex::Error> for Error {
 impl From<ThreadError> for Error {
     fn from(error: ThreadError) -> Self {
         Error::ThreadError(error)
+    }
+}
+
+//------------------------------------------------------------------------------
+impl From<path::StripPrefixError> for Error {
+    fn from(error: path::StripPrefixError) -> Self {
+        Error::StripPrefixError(error)
     }
 }
 
@@ -576,7 +584,7 @@ fn add_changed(regex: &regex::Regex) -> Result<()> {
 //------------------------------------------------------------------------------
 fn relative_to_repo(
     path: &mut path::PathBuf,
-) -> Option<(path::PathBuf, String)> {
+) -> Result<Option<(path::PathBuf, String)>> {
     for parent in path.ancestors() {
         if !parent.as_os_str().is_empty() {
             let mut repo = path::PathBuf::new(); // TODO LT: Wanted to keep this around but need nightly to use 'clear'.
@@ -586,23 +594,19 @@ fn relative_to_repo(
 
             if repo.exists() {
                 repo.pop();
-                let relative_path = path
-                    .as_path()
-                    .strip_prefix(repo.as_path())
-                    .unwrap()
-                    .to_str()
-                    .unwrap();
-                return Some((repo, relative_path.to_string()));
+                let relative_path =
+                    get(path.as_path().strip_prefix(repo.as_path())?.to_str())?;
+                return Ok(Some((repo, relative_path.to_string())));
             }
         }
     }
 
-    None
+    Ok(None)
 }
 
 //------------------------------------------------------------------------------
 fn add_entry(path: &mut path::PathBuf) {
-    if let Some((repo, relative_path)) = relative_to_repo(path) {
+    if let Some((repo, relative_path)) = relative_to_repo(path).unwrap() {
         let args = ["add", relative_path.as_str()];
         let output = process::Command::new("git")
             .args(&args)
@@ -989,8 +993,11 @@ fn mv(from: &str, to: &str) {
     from_path.push(from);
     to_path.push(to);
 
-    if let Some((from_repo, from_rel)) = relative_to_repo(&mut from_path) {
-        if let Some((to_repo, to_rel)) = relative_to_repo(&mut to_path) {
+    if let Some((from_repo, from_rel)) =
+        relative_to_repo(&mut from_path).unwrap()
+    {
+        if let Some((to_repo, to_rel)) = relative_to_repo(&mut to_path).unwrap()
+        {
             if from_path.exists() {
                 // Remove the destionation if it exists
                 if to_path.exists() {
