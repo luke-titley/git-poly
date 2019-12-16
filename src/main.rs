@@ -1168,7 +1168,7 @@ Maybe you wanted to say 'git add .'?";
                     if index + 2 >= args.len() {
                         argument_error("mv requires a source and a dest");
                     }
-                    mv(&args[index + 1], &args[index + 2]);
+                    mv(&args[index + 1], &args[index + 2])?;
                     break;
                 }
                 "replace" => {
