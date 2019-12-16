@@ -289,7 +289,10 @@ fn get_branch_name(path: &path::PathBuf) -> Result<String> {
         return Ok("HEADLESS".to_string());
     }
 
-    Ok(result[0].as_ref().unwrap().to_string())
+    match result[0].as_ref() {
+        Ok(r) => Ok(r.to_string()),
+        Err(error) => Err(Error::NoneError()),
+    }
 }
 
 //------------------------------------------------------------------------------
