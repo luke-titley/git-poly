@@ -31,6 +31,7 @@ type BranchRegex = Option<regex::Regex>;
 type PathSendError =
     std::sync::mpsc::SendError<std::option::Option<std::path::PathBuf>>;
 type RecvError = std::sync::mpsc::RecvError;
+type ThreadError = std::boxed::Box<dyn std::any::Any + std::marker::Send>;
 
 //------------------------------------------------------------------------------
 // Error
@@ -42,6 +43,7 @@ enum Error {
     PathSendError(PathSendError),
     RecvError(RecvError),
     RegexError(regex::Error),
+    ThreadError(ThreadError),
 }
 
 //------------------------------------------------------------------------------
@@ -104,6 +106,14 @@ impl From<regex::Error> for Error {
     }
 }
 
+//------------------------------------------------------------------------------
+impl From<ThreadError> for Error {
+    fn from(error: ThreadError) -> Self {
+        Error::ThreadError(error)
+    }
+}
+
+//------------------------------------------------------------------------------
 type Result<R> = std::result::Result<R, Error>;
 
 //------------------------------------------------------------------------------
@@ -383,7 +393,9 @@ fn replace_thread(
 
         // Wait for all the replace threads to finish
         for replace_thread in replace_threads {
-            replace_thread.join().unwrap();
+            if let Err(error) = replace_thread.join() {
+                return Err(Error::ThreadError(error));
+            }
         }
     }
 
