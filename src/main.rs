@@ -346,7 +346,7 @@ fn replace_thread(
         let mut replace_threads = Vec::new();
         let stdout = io::BufReader::new(&output.stdout as &[u8]);
         for line in stdout.lines() {
-            let file_path = path::Path::new(&path).join(line.unwrap());
+            let file_path = path::Path::new(&path).join(line?);
             let from_regex = from_exp.clone();
             let to_regex = to.clone();
             let replace_thread = thread::spawn(move || {
