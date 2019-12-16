@@ -427,18 +427,44 @@ fn replace(
     // Wait for all the threads to finish
     for thread in threads {
         thread.join()?;
-        /*
-        if let Err(error) = thread.join() {
-            return Err(Error::ThreadError(error));
-        }
-        */
     }
 
     Ok(())
 }
 
 //------------------------------------------------------------------------------
-fn go(path_regex: &regex::Regex, branch_regex: &BranchRegex, args_pos: usize) {
+fn go_thread(
+    path: &path::PathBuf,
+    branch_filter: &BranchRegex,
+    args_pos: usize,
+) -> Result<()> {
+    // Filter based on branch name
+    if let Some(pattern) = branch_filter {
+        if !filter_branch(&pattern, &path).unwrap() {
+            return Ok(());
+        }
+    }
+
+    let args: Vec<String> = env::args().collect();
+    let output = process::Command::new("git")
+        .args(&args[args_pos + 1..])
+        .current_dir(path.clone())
+        .output()
+        .unwrap();
+
+    // stdout/stderr
+    write_to_stdout(&path, &output.stdout);
+    write_to_stderr(&path, &output.stderr);
+
+    Ok(())
+}
+
+//------------------------------------------------------------------------------
+fn go(
+    path_regex: &regex::Regex,
+    branch_regex: &BranchRegex,
+    args_pos: usize,
+) -> Result<()> {
     let mut threads = Vec::new();
 
     // Loop through the results of what the walker is outputting
@@ -446,25 +472,8 @@ fn go(path_regex: &regex::Regex, branch_regex: &BranchRegex, args_pos: usize) {
         let branch_filter = branch_regex.clone();
 
         // Execute a new thread for processing this result
-        let thread = thread::spawn(move || {
-            // Filter based on branch name
-            if let Some(pattern) = branch_filter {
-                if !filter_branch(&pattern, &path).unwrap() {
-                    return;
-                }
-            }
-
-            let args: Vec<String> = env::args().collect();
-            let output = process::Command::new("git")
-                .args(&args[args_pos + 1..])
-                .current_dir(path.clone())
-                .output()
-                .unwrap();
-
-            // stdout/stderr
-            write_to_stdout(&path, &output.stdout);
-            write_to_stderr(&path, &output.stderr);
-        });
+        let thread =
+            thread::spawn(move || go_thread(&path, &branch_filter, args_pos));
 
         threads.push(thread);
     }
@@ -473,6 +482,8 @@ fn go(path_regex: &regex::Regex, branch_regex: &BranchRegex, args_pos: usize) {
     for thread in threads {
         thread.join().unwrap();
     }
+
+    Ok(())
 }
 
 //------------------------------------------------------------------------------
