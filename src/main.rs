@@ -306,7 +306,71 @@ fn filter_branch(
 }
 
 //------------------------------------------------------------------------------
-fn replace(regex: &regex::Regex, branch_regex: &BranchRegex, args_pos: usize) -> Result<()> {
+fn replace_thread(
+    branch_filter: &BranchRegex,
+    path: &path::PathBuf,
+    from: &String,
+    to: &String,
+) {
+    // Filter based on branch name
+    if let Some(pattern) = branch_filter {
+        if !filter_branch(&pattern, &path).unwrap() {
+            return;
+        }
+    }
+
+    let from_exp = regex::Regex::new(&from).unwrap();
+
+    let args = ["grep", "-l", from.as_str()];
+    let output = process::Command::new("git")
+        .args(&args)
+        .current_dir(path.clone())
+        .output()
+        .unwrap();
+
+    // stderr
+    write_to_stderr(&path, &output.stderr);
+
+    // perform the find and replace
+    if !output.stdout.is_empty() {
+        let mut replace_threads = Vec::new();
+        let stdout = io::BufReader::new(&output.stdout as &[u8]);
+        for line in stdout.lines() {
+            let file_path = path::Path::new(&path).join(line.unwrap());
+            let from_regex = from_exp.clone();
+            let to_regex = to.clone();
+            let replace_thread = thread::spawn(move || {
+                let mut output = Vec::<u8>::new();
+                {
+                    let input = fs::File::open(file_path.clone()).unwrap();
+                    let buffered = io::BufReader::new(input);
+                    for line in buffered.lines() {
+                        let old_line = line.unwrap();
+                        let new_line = from_regex
+                            .replace_all(&old_line as &str, &to_regex as &str);
+                        writeln!(output, "{0}", new_line).unwrap();
+                    }
+                }
+                let mut input = fs::File::create(file_path).unwrap();
+                input.write_all(&output).unwrap();
+            });
+
+            replace_threads.push(replace_thread);
+        }
+
+        // Wait for all the replace threads to finish
+        for replace_thread in replace_threads {
+            replace_thread.join().unwrap();
+        }
+    }
+}
+
+//------------------------------------------------------------------------------
+fn replace(
+    regex: &regex::Regex,
+    branch_regex: &BranchRegex,
+    args_pos: usize,
+) -> Result<()> {
     let mut threads = Vec::new();
 
     let args: Vec<String> = env::args().collect();
@@ -320,62 +384,8 @@ fn replace(regex: &regex::Regex, branch_regex: &BranchRegex, args_pos: usize) ->
 
         // Execute a new thread for processing this result
         let thread = thread::spawn(move || {
-            // Filter based on branch name
-            if let Some(pattern) = branch_filter {
-                if !filter_branch(&pattern, &path).unwrap() {
-                    return;
-                }
-            }
-
-            let from_exp = regex::Regex::new(&from).unwrap();
-
-            let args = ["grep", "-l", from.as_str()];
-            let output = process::Command::new("git")
-                .args(&args)
-                .current_dir(path.clone())
-                .output()
-                .unwrap();
-
-            // stderr
-            write_to_stderr(&path, &output.stderr);
-
-            // perform the find and replace
-            if !output.stdout.is_empty() {
-                let mut replace_threads = Vec::new();
-                let stdout = io::BufReader::new(&output.stdout as &[u8]);
-                for line in stdout.lines() {
-                    let file_path = path::Path::new(&path).join(line.unwrap());
-                    let from_regex = from_exp.clone();
-                    let to_regex = to.clone();
-                    let replace_thread = thread::spawn(move || {
-                        let mut output = Vec::<u8>::new();
-                        {
-                            let input =
-                                fs::File::open(file_path.clone()).unwrap();
-                            let buffered = io::BufReader::new(input);
-                            for line in buffered.lines() {
-                                let old_line = line.unwrap();
-                                let new_line = from_regex.replace_all(
-                                    &old_line as &str,
-                                    &to_regex as &str,
-                                );
-                                writeln!(output, "{0}", new_line).unwrap();
-                            }
-                        }
-                        let mut input = fs::File::create(file_path).unwrap();
-                        input.write_all(&output).unwrap();
-                    });
-
-                    replace_threads.push(replace_thread);
-                }
-
-                // Wait for all the replace threads to finish
-                for replace_thread in replace_threads {
-                    replace_thread.join().unwrap();
-                }
-            }
+            replace_thread(&branch_filter, &path, &from, &to)
         });
-
         threads.push(thread);
     }
 
