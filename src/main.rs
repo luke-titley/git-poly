@@ -41,6 +41,7 @@ enum Error {
     IOError(io::Error),
     PathSendError(PathSendError),
     RecvError(RecvError),
+    RegexError(regex::Error)
 }
 
 //------------------------------------------------------------------------------
@@ -93,6 +94,13 @@ impl From<io::Error> for Error {
 impl From<RecvError> for Error {
     fn from(error: RecvError) -> Self {
         Error::RecvError(error)
+    }
+}
+
+//------------------------------------------------------------------------------
+impl From<regex::Error> for Error {
+    fn from(error: regex::Error) -> Self {
+        Error::RegexError(error)
     }
 }
 
@@ -319,7 +327,7 @@ fn replace_thread(
         }
     }
 
-    let from_exp = regex::Regex::new(&from).unwrap();
+    let from_exp = regex::Regex::new(&from)?;
 
     let args = ["grep", "-l", from.as_str()];
     let output = process::Command::new("git")
