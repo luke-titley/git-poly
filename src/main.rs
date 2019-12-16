@@ -188,6 +188,13 @@ fn list_repos(regex: &regex::Regex, send: &PathSender) -> Result<()> {
 }
 
 //------------------------------------------------------------------------------
+fn handle_errors<R>(result: Result<R>) {
+    if let Err(error) = result {
+        writeln!(std::io::stderr(), "{0}", error).unwrap();
+    }
+}
+
+//------------------------------------------------------------------------------
 // RepoIterator
 //------------------------------------------------------------------------------
 struct RepoIterator {
@@ -202,9 +209,7 @@ impl RepoIterator {
         // Kick off the traversal thread. It's detached by default.
         let regex_copy = regex.clone();
         thread::spawn(move || {
-            if let Err(error) = list_repos(&regex_copy, &send) {
-                writeln!(std::io::stderr(), "{0}", error).unwrap();
-            }
+            handle_errors(list_repos(&regex_copy, &send));
         });
 
         // Make the new thread object
