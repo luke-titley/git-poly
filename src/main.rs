@@ -296,14 +296,17 @@ fn get_branch_name(path: &path::PathBuf) -> Result<String> {
 }
 
 //------------------------------------------------------------------------------
-fn filter_branch(expression: &regex::Regex, path: &path::PathBuf) -> bool {
-    let branch_name = get_branch_name(path).unwrap();
+fn filter_branch(
+    expression: &regex::Regex,
+    path: &path::PathBuf,
+) -> Result<bool> {
+    let branch_name = get_branch_name(path)?;
 
-    expression.is_match(branch_name.as_str())
+    Ok(expression.is_match(branch_name.as_str()))
 }
 
 //------------------------------------------------------------------------------
-fn replace(regex: &regex::Regex, branch_regex: &BranchRegex, args_pos: usize) {
+fn replace(regex: &regex::Regex, branch_regex: &BranchRegex, args_pos: usize) -> Result<()> {
     let mut threads = Vec::new();
 
     let args: Vec<String> = env::args().collect();
@@ -319,7 +322,7 @@ fn replace(regex: &regex::Regex, branch_regex: &BranchRegex, args_pos: usize) {
         let thread = thread::spawn(move || {
             // Filter based on branch name
             if let Some(pattern) = branch_filter {
-                if !filter_branch(&pattern, &path) {
+                if !filter_branch(&pattern, &path).unwrap() {
                     return;
                 }
             }
@@ -380,6 +383,8 @@ fn replace(regex: &regex::Regex, branch_regex: &BranchRegex, args_pos: usize) {
     for thread in threads {
         thread.join().unwrap();
     }
+
+    Ok(())
 }
 
 //------------------------------------------------------------------------------
@@ -394,7 +399,7 @@ fn go(path_regex: &regex::Regex, branch_regex: &BranchRegex, args_pos: usize) {
         let thread = thread::spawn(move || {
             // Filter based on branch name
             if let Some(pattern) = branch_filter {
-                if !filter_branch(&pattern, &path) {
+                if !filter_branch(&pattern, &path).unwrap() {
                     return;
                 }
             }
@@ -432,7 +437,7 @@ fn cmd(regex: &regex::Regex, branch_regex: &BranchRegex, args_pos: usize) {
         let thread = thread::spawn(move || {
             // Filter based on branch name
             if let Some(pattern) = branch_filter {
-                if !filter_branch(&pattern, &path) {
+                if !filter_branch(&pattern, &path).unwrap() {
                     return;
                 }
             }
@@ -542,7 +547,7 @@ fn ls_files(regex: &regex::Regex, branch_regex: &BranchRegex) {
         threads.push(thread::spawn(move || {
             // Filter based on branch name
             if let Some(pattern) = branch_filter {
-                if !filter_branch(&pattern, &path) {
+                if !filter_branch(&pattern, &path).unwrap() {
                     return;
                 }
             }
@@ -586,7 +591,7 @@ fn grep(regex: &regex::Regex, branch_regex: &BranchRegex, expression: &str) {
         threads.push(thread::spawn(move || {
             // Filter based on branch name
             if let Some(pattern) = branch_filter {
-                if !filter_branch(&pattern, &path) {
+                if !filter_branch(&pattern, &path).unwrap() {
                     return;
                 }
             }
@@ -657,7 +662,7 @@ fn reset(regex: &regex::Regex, branch_regex: &BranchRegex) {
     // Filtered traversal
     if let Some(pattern) = branch_regex {
         for path in RepoIterator::new(regex) {
-            if filter_branch(&pattern, &path) {
+            if filter_branch(&pattern, &path).unwrap() {
                 reset_all(path);
             }
         }
@@ -675,7 +680,7 @@ fn ls(regex: &regex::Regex, branch_regex: &BranchRegex) {
     // Filtered traversal
     if let Some(pattern) = branch_regex {
         for path in RepoIterator::new(regex) {
-            if filter_branch(&pattern, &path) {
+            if filter_branch(&pattern, &path).unwrap() {
                 let display = path.as_path().to_str().unwrap();
                 println!("{0}", display);
             }
@@ -704,7 +709,7 @@ fn commit(regex: &regex::Regex, branch_regex: &BranchRegex, msg: &str) {
         threads.push(thread::spawn(move || {
             // Filter based on branch name
             if let Some(pattern) = branch_filter {
-                if !filter_branch(&pattern, &path) {
+                if !filter_branch(&pattern, &path).unwrap() {
                     return;
                 }
             }
@@ -802,7 +807,7 @@ fn status(regex: &regex::Regex, branch_regex: &BranchRegex) {
         let thread = thread::spawn(move || {
             // Filter based on branch name
             if let Some(pattern) = branch_filter {
-                if !filter_branch(&pattern, &path) {
+                if !filter_branch(&pattern, &path).unwrap() {
                     return;
                 }
             }
