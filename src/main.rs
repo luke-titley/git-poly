@@ -325,14 +325,14 @@ fn replace_in_file(
         let input = fs::File::open(file_path.clone())?;
         let buffered = io::BufReader::new(input);
         for line in buffered.lines() {
-            let old_line = line.unwrap();
+            let old_line = line?;
             let new_line =
                 from_regex.replace_all(&old_line as &str, to_regex as &str);
-            writeln!(output, "{0}", new_line).unwrap();
+            writeln!(output, "{0}", new_line)?;
         }
     }
-    let mut input = fs::File::create(file_path).unwrap();
-    input.write_all(&output).unwrap();
+    let mut input = fs::File::create(file_path)?;
+    input.write_all(&output)?;
 
     Ok(())
 }
