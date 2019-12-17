@@ -793,12 +793,12 @@ fn reset(regex: &regex::Regex, branch_regex: &BranchRegex) -> Result<()> {
 }
 
 //------------------------------------------------------------------------------
-fn ls(regex: &regex::Regex, branch_regex: &BranchRegex) {
+fn ls(regex: &regex::Regex, branch_regex: &BranchRegex) -> Result<()> {
     // Filtered traversal
     if let Some(pattern) = branch_regex {
         for path in RepoIterator::new(regex) {
-            if filter_branch(&pattern, &path).unwrap() {
-                let display = path.as_path().to_str().unwrap();
+            if filter_branch(&pattern, &path)? {
+                let display = get(path.as_path().to_str())?;
                 println!("{0}", display);
             }
         }
@@ -806,10 +806,12 @@ fn ls(regex: &regex::Regex, branch_regex: &BranchRegex) {
     // Unfiltered traversal
     } else {
         for path in RepoIterator::new(regex) {
-            let display = path.as_path().to_str().unwrap();
+            let display = get(path.as_path().to_str())?;
             println!("{0}", display);
         }
     }
+
+    Ok(())
 }
 
 //------------------------------------------------------------------------------
