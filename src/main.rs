@@ -759,34 +759,37 @@ fn add(regex: &regex::Regex, args_pos: usize) -> Result<()> {
 }
 
 //------------------------------------------------------------------------------
-fn reset_all(path: path::PathBuf) {
+fn reset_all(path: path::PathBuf) -> Result<()> {
     let output = process::Command::new("git")
         .args(&["reset"])
         .current_dir(path.clone())
-        .output()
-        .unwrap();
+        .output()?;
 
     // stdout/stderr
     write_to_stdout(&path, &output.stdout);
     write_to_stderr(&path, &output.stderr);
+
+    Ok(())
 }
 
 //------------------------------------------------------------------------------
-fn reset(regex: &regex::Regex, branch_regex: &BranchRegex) {
+fn reset(regex: &regex::Regex, branch_regex: &BranchRegex) -> Result<()> {
     // Filtered traversal
     if let Some(pattern) = branch_regex {
         for path in RepoIterator::new(regex) {
-            if filter_branch(&pattern, &path).unwrap() {
-                reset_all(path);
+            if filter_branch(&pattern, &path)? {
+                reset_all(path)?;
             }
         }
 
     // Unfiltered traversal
     } else {
         for path in RepoIterator::new(regex) {
-            reset_all(path);
+            reset_all(path)?;
         }
     }
+
+    Ok(())
 }
 
 //------------------------------------------------------------------------------
@@ -1185,7 +1188,7 @@ Maybe you wanted to say 'git add .'?";
                     break;
                 }
                 "reset" => {
-                    reset(&flags.path, &flags.branch);
+                    reset(&flags.path, &flags.branch)?;
                     break;
                 }
                 "status" => {
