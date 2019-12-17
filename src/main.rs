@@ -736,7 +736,7 @@ fn grep(
 }
 
 //------------------------------------------------------------------------------
-fn add(regex: &regex::Regex, args_pos: usize) {
+fn add(regex: &regex::Regex, args_pos: usize) -> Result<()> {
     let args: Vec<String> = env::args().collect();
 
     let mut minus_u = false;
@@ -745,15 +745,17 @@ fn add(regex: &regex::Regex, args_pos: usize) {
             "-u" => {
                 if !minus_u {
                     minus_u = true;
-                    add_changed(regex).unwrap();
+                    add_changed(regex)?;
                 }
             }
             file_path => {
                 let mut path = path::PathBuf::from(file_path);
-                add_entry(&mut path).unwrap();
+                add_entry(&mut path)?;
             }
         }
     }
+
+    Ok(())
 }
 
 //------------------------------------------------------------------------------
