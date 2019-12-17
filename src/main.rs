@@ -622,6 +622,35 @@ fn add_entry(path: &mut path::PathBuf) -> Result<()> {
 }
 
 //------------------------------------------------------------------------------
+fn ls_files_thread(branch_filter: &BranchRegex, path: &path::PathBuf) {
+    // Filter based on branch name
+    if let Some(pattern) = branch_filter {
+        if !filter_branch(&pattern, &path).unwrap() {
+            return;
+        }
+    }
+
+    let output = process::Command::new("git")
+        .args(&["ls-files"])
+        .current_dir(path.clone())
+        .output()
+        .unwrap();
+
+    write_to_stderr(&path, &output.stderr);
+
+    let outstream = io::stdout();
+    {
+        let _handle = outstream.lock();
+        let stdout = io::BufReader::new(&output.stdout as &[u8]);
+        let flat_path = path.as_path().join(path::Path::new(""));
+        for line in stdout.lines() {
+            print!("{0}", flat_path.display());
+            println!("{0}", line.unwrap());
+        }
+    }
+}
+
+//------------------------------------------------------------------------------
 fn ls_files(regex: &regex::Regex, branch_regex: &BranchRegex) {
     let mut threads = Vec::new();
 
@@ -630,31 +659,7 @@ fn ls_files(regex: &regex::Regex, branch_regex: &BranchRegex) {
         let branch_filter = branch_regex.clone();
 
         threads.push(thread::spawn(move || {
-            // Filter based on branch name
-            if let Some(pattern) = branch_filter {
-                if !filter_branch(&pattern, &path).unwrap() {
-                    return;
-                }
-            }
-
-            let output = process::Command::new("git")
-                .args(&["ls-files"])
-                .current_dir(path.clone())
-                .output()
-                .unwrap();
-
-            write_to_stderr(&path, &output.stderr);
-
-            let outstream = io::stdout();
-            {
-                let _handle = outstream.lock();
-                let stdout = io::BufReader::new(&output.stdout as &[u8]);
-                let flat_path = path.as_path().join(path::Path::new(""));
-                for line in stdout.lines() {
-                    print!("{0}", flat_path.display());
-                    println!("{0}", line.unwrap());
-                }
-            }
+            ls_files_thread(&branch_filter, &path)
         }));
     }
 
@@ -994,8 +999,7 @@ fn mv(from: &str, to: &str) -> Result<()> {
     from_path.push(from);
     to_path.push(to);
 
-    let (from_repo, from_rel) =
-        relative_to_repo(&mut from_path)?;
+    let (from_repo, from_rel) = relative_to_repo(&mut from_path)?;
     let (to_repo, to_rel) = relative_to_repo(&mut to_path)?;
 
     if from_path.exists() {
@@ -1005,13 +1009,13 @@ fn mv(from: &str, to: &str) -> Result<()> {
                 .args(&["rm", "-rf", to_rel.as_str()])
                 .current_dir(to_repo.clone())
                 .output()?;
- 
+
             write_to_stderr(&to_repo, &output.stderr);
         }
- 
+
         // Move the file
         fs::rename(&from_path, &to_path)?;
- 
+
         // Remove the old file or folder
         {
             let output = process::Command::new("git")
@@ -1020,7 +1024,7 @@ fn mv(from: &str, to: &str) -> Result<()> {
                 .output()?;
             write_to_stderr(&to_repo, &output.stderr);
         }
- 
+
         // Add the newfile or folder
         {
             let output = process::Command::new("git")
