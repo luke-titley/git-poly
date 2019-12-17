@@ -622,19 +622,21 @@ fn add_entry(path: &mut path::PathBuf) -> Result<()> {
 }
 
 //------------------------------------------------------------------------------
-fn ls_files_thread(branch_filter: &BranchRegex, path: &path::PathBuf) {
+fn ls_files_thread(
+    branch_filter: &BranchRegex,
+    path: &path::PathBuf,
+) -> Result<()> {
     // Filter based on branch name
     if let Some(pattern) = branch_filter {
-        if !filter_branch(&pattern, &path).unwrap() {
-            return;
+        if !filter_branch(&pattern, &path)? {
+            return Ok(());
         }
     }
 
     let output = process::Command::new("git")
         .args(&["ls-files"])
         .current_dir(path.clone())
-        .output()
-        .unwrap();
+        .output()?;
 
     write_to_stderr(&path, &output.stderr);
 
@@ -645,13 +647,15 @@ fn ls_files_thread(branch_filter: &BranchRegex, path: &path::PathBuf) {
         let flat_path = path.as_path().join(path::Path::new(""));
         for line in stdout.lines() {
             print!("{0}", flat_path.display());
-            println!("{0}", line.unwrap());
+            println!("{0}", line?);
         }
     }
+
+    Ok(())
 }
 
 //------------------------------------------------------------------------------
-fn ls_files(regex: &regex::Regex, branch_regex: &BranchRegex) {
+fn ls_files(regex: &regex::Regex, branch_regex: &BranchRegex) -> Result<()> {
     let mut threads = Vec::new();
 
     // Loop through the results of what the walker is outputting
@@ -659,14 +663,16 @@ fn ls_files(regex: &regex::Regex, branch_regex: &BranchRegex) {
         let branch_filter = branch_regex.clone();
 
         threads.push(thread::spawn(move || {
-            ls_files_thread(&branch_filter, &path)
+            handle_errors(ls_files_thread(&branch_filter, &path))
         }));
     }
 
     // Wait for all the threads to finish
     for thread in threads {
-        thread.join().unwrap();
+        thread.join()?;
     }
+
+    Ok(())
 }
 
 //------------------------------------------------------------------------------
@@ -1135,7 +1141,7 @@ Maybe you wanted to say 'git add .'?";
                     break;
                 }
                 "ls-files" => {
-                    ls_files(&flags.path, &flags.branch);
+                    ls_files(&flags.path, &flags.branch)?;
                     break;
                 }
                 "ls" => {
