@@ -723,7 +723,7 @@ fn grep(
         let branch_filter = branch_regex.clone();
 
         threads.push(thread::spawn(move || {
-            grep_thread(&expr, &branch_filter, &path)
+            handle_errors(grep_thread(&expr, &branch_filter, &path))
         }));
     }
 
