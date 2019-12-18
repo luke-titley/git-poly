@@ -814,6 +814,57 @@ fn ls(regex: &regex::Regex, branch_regex: &BranchRegex) -> Result<()> {
     Ok(())
 }
 
+fn command_thread(
+    message: &String,
+    c: &regex::Regex,
+    branch_filter: &BranchRegex,
+    path: &path::PathBuf,
+) {
+    // Filter based on branch name
+    if let Some(pattern) = branch_filter {
+        if !filter_branch(&pattern, &path).unwrap() {
+            return;
+        }
+    }
+
+    let args = ["status", "--porcelain"];
+    let output = process::Command::new("git")
+        .args(&args)
+        .current_dir(path.clone())
+        .output()
+        .unwrap();
+
+    write_to_stderr(&path, &output.stderr);
+
+    // Search for modifications
+    let stdout = io::BufReader::new(&output.stdout as &[u8]);
+    let mut lines = stdout.lines();
+    let has_modifications = {
+        loop {
+            if let Some(result) = lines.next() {
+                let line = result.unwrap();
+                if c.is_match(line.as_str()) {
+                    break true;
+                }
+            } else {
+                break false;
+            }
+        }
+    };
+
+    // If we have modifications then do a commit
+    if has_modifications {
+        let output = process::Command::new("git")
+            .args(&["commit", "-m", message.as_str()])
+            .current_dir(path.clone())
+            .output()
+            .unwrap();
+
+        write_to_stderr(&path, &output.stderr);
+        write_to_stdout(&path, &output.stdout);
+    }
+}
+
 //------------------------------------------------------------------------------
 fn commit(regex: &regex::Regex, branch_regex: &BranchRegex, msg: &str) {
     let mut threads = Vec::new();
@@ -826,49 +877,7 @@ fn commit(regex: &regex::Regex, branch_regex: &BranchRegex, msg: &str) {
         let branch_filter = branch_regex.clone();
 
         threads.push(thread::spawn(move || {
-            // Filter based on branch name
-            if let Some(pattern) = branch_filter {
-                if !filter_branch(&pattern, &path).unwrap() {
-                    return;
-                }
-            }
-
-            let args = ["status", "--porcelain"];
-            let output = process::Command::new("git")
-                .args(&args)
-                .current_dir(path.clone())
-                .output()
-                .unwrap();
-
-            write_to_stderr(&path, &output.stderr);
-
-            // Search for modifications
-            let stdout = io::BufReader::new(&output.stdout as &[u8]);
-            let mut lines = stdout.lines();
-            let has_modifications = {
-                loop {
-                    if let Some(result) = lines.next() {
-                        let line = result.unwrap();
-                        if c.is_match(line.as_str()) {
-                            break true;
-                        }
-                    } else {
-                        break false;
-                    }
-                }
-            };
-
-            // If we have modifications then do a commit
-            if has_modifications {
-                let output = process::Command::new("git")
-                    .args(&["commit", "-m", message.as_str()])
-                    .current_dir(path.clone())
-                    .output()
-                    .unwrap();
-
-                write_to_stderr(&path, &output.stderr);
-                write_to_stdout(&path, &output.stdout);
-            }
+            command_thread(&message, &c, &branch_filter, &path)
         }));
     }
 
