@@ -69,24 +69,6 @@ fn get<S>(option: Option<S>) -> Result<S> {
     }
 }
 
-/*
-//------------------------------------------------------------------------------
-impl From<zebra> for Error {
-    fn from(error: zebra) -> Self {
-        Error::pig(error)
-    }
-}
-*/
-
-/*
-//------------------------------------------------------------------------------
-impl From<std::option::NoneError> for Error {
-    fn from(error: std::option::NoneError) -> Self {
-        Error::NoneError()
-    }
-}
-*/
-
 //------------------------------------------------------------------------------
 impl From<PathSendError> for Error {
     fn from(error: PathSendError) -> Self {
@@ -501,8 +483,9 @@ fn go(
         let branch_filter = branch_regex.clone();
 
         // Execute a new thread for processing this result
-        let thread =
-            thread::spawn(move || go_thread(&path, &branch_filter, args_pos));
+        let thread = thread::spawn(move || {
+            handle_errors(go_thread(&path, &branch_filter, args_pos))
+        });
 
         threads.push(thread);
     }
@@ -555,8 +538,9 @@ fn cmd(
         let branch_filter = branch_regex.clone();
 
         // Execute a new thread for processing this result
-        let thread =
-            thread::spawn(move || cmd_thread(&path, &branch_filter, args_pos));
+        let thread = thread::spawn(move || {
+            handle_errors(cmd_thread(&path, &branch_filter, args_pos))
+        });
         threads.push(thread);
     }
 
@@ -996,8 +980,7 @@ fn status_thread(
 fn status(regex: &regex::Regex, branch_regex: &BranchRegex) -> Result<()> {
     let (send, recv): (StatusSender, StatusReceiver) = mpsc::channel();
 
-    let splitter_def =
-        regex::Regex::new(r"(UU| M|M |MM|A | D|D |\?\?) (.*)")?;
+    let splitter_def = regex::Regex::new(r"(UU| M|M |MM|A | D|D |\?\?) (.*)")?;
 
     let mut threads = Vec::new();
     for path in RepoIterator::new(regex) {
@@ -1178,8 +1161,7 @@ fn main() -> Result<()> {
                              (ie --branch 'feature/foo.*')",
                         );
                     }
-                    flags.branch =
-                        Some(regex::Regex::new(&(args[index + 1]))?);
+                    flags.branch = Some(regex::Regex::new(&(args[index + 1]))?);
                     skip = 1;
                 }
                 // Sub-commands
