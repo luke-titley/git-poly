@@ -822,7 +822,7 @@ fn command_thread(
 ) -> Result<()> {
     // Filter based on branch name
     if let Some(pattern) = branch_filter {
-        if !filter_branch(&pattern, &path).unwrap() {
+        if !filter_branch(&pattern, &path)? {
             return Ok(());
         }
     }
@@ -866,10 +866,14 @@ fn command_thread(
 }
 
 //------------------------------------------------------------------------------
-fn commit(regex: &regex::Regex, branch_regex: &BranchRegex, msg: &str) {
+fn commit(
+    regex: &regex::Regex,
+    branch_regex: &BranchRegex,
+    msg: &str,
+) -> Result<()> {
     let mut threads = Vec::new();
 
-    let changes = regex::Regex::new(r"^(M|A|D) .*").unwrap();
+    let changes = regex::Regex::new(r"^(M|A|D) .*")?;
 
     for path in RepoIterator::new(regex) {
         let message = String::from_str(msg).unwrap();
@@ -883,8 +887,10 @@ fn commit(regex: &regex::Regex, branch_regex: &BranchRegex, msg: &str) {
 
     // Wait for all the threads to finish
     for thread in threads {
-        thread.join().unwrap();
+        thread.join()?;
     }
+
+    Ok(())
 }
 
 //------------------------------------------------------------------------------
@@ -1195,7 +1201,7 @@ Maybe you wanted to say 'git add .'?";
                         &flags.path,
                         &flags.branch,
                         args[index + 2].as_str(),
-                    );
+                    )?;
                     break;
                 }
                 "reset" => {
