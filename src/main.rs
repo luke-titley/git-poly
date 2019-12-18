@@ -329,7 +329,7 @@ fn get_branch_name(path: &path::PathBuf) -> Result<String> {
         .current_dir(path.clone())
         .output()?;
 
-    write_to_stderr(&path, &output.stderr);
+    write_to_stderr(&path, &output.stderr)?;
 
     let stdout = io::BufReader::new(&output.stdout as &[u8]);
     let result: Vec<_> = stdout.lines().collect();
@@ -340,7 +340,7 @@ fn get_branch_name(path: &path::PathBuf) -> Result<String> {
 
     match result[0].as_ref() {
         Ok(r) => Ok(r.to_string()),
-        Err(error) => Err(Error::NoneError()),
+        Err(_) => Err(Error::NoneError()),
     }
 }
 
@@ -400,7 +400,7 @@ fn replace_thread(
         .output()?;
 
     // stderr
-    write_to_stderr(&path, &output.stderr);
+    write_to_stderr(&path, &output.stderr)?;
 
     // perform the find and replace
     if !output.stdout.is_empty() {
@@ -482,8 +482,8 @@ fn go_thread(
         .output()?;
 
     // stdout/stderr
-    write_to_stdout(&path, &output.stdout);
-    write_to_stderr(&path, &output.stderr);
+    write_to_stdout(&path, &output.stdout)?;
+    write_to_stderr(&path, &output.stderr)?;
 
     Ok(())
 }
@@ -536,8 +536,8 @@ fn cmd_thread(
         .output()?;
 
     // stdout/stderr
-    write_to_stdout(&path, &output.stdout);
-    write_to_stderr(&path, &output.stderr);
+    write_to_stdout(&path, &output.stdout)?;
+    write_to_stderr(&path, &output.stderr)?;
 
     Ok(())
 }
@@ -576,8 +576,8 @@ fn add_changed_thread(path: &path::PathBuf) -> Result<()> {
         .output()?;
 
     // stdout/stderr
-    write_to_stdout(&path, &output.stdout);
-    write_to_stderr(&path, &output.stderr);
+    write_to_stdout(&path, &output.stdout)?;
+    write_to_stderr(&path, &output.stderr)?;
 
     Ok(())
 }
@@ -636,8 +636,8 @@ fn add_entry(path: &mut path::PathBuf) -> Result<()> {
         .output()?;
 
     // stdout/stderr
-    write_to_stdout(&repo, &output.stdout);
-    write_to_stderr(&repo, &output.stderr);
+    write_to_stdout(&repo, &output.stdout)?;
+    write_to_stderr(&repo, &output.stderr)?;
 
     Ok(())
 }
@@ -659,7 +659,7 @@ fn ls_files_thread(
         .current_dir(path.clone())
         .output()?;
 
-    write_to_stderr(&path, &output.stderr);
+    write_to_stderr(&path, &output.stderr)?;
 
     let outstream = io::stdout();
     {
@@ -714,7 +714,7 @@ fn grep_thread(
         .current_dir(path.clone())
         .output()?;
 
-    write_to_stderr(&path, &output.stderr);
+    write_to_stderr(&path, &output.stderr)?;
 
     let outstream = io::stdout();
     {
@@ -787,8 +787,8 @@ fn reset_all(path: path::PathBuf) -> Result<()> {
         .output()?;
 
     // stdout/stderr
-    write_to_stdout(&path, &output.stdout);
-    write_to_stderr(&path, &output.stderr);
+    write_to_stdout(&path, &output.stdout)?;
+    write_to_stderr(&path, &output.stderr)?;
 
     Ok(())
 }
@@ -854,7 +854,7 @@ fn command_thread(
         .current_dir(path.clone())
         .output()?;
 
-    write_to_stderr(&path, &output.stderr);
+    write_to_stderr(&path, &output.stderr)?;
 
     // Search for modifications
     let stdout = io::BufReader::new(&output.stdout as &[u8]);
@@ -879,8 +879,8 @@ fn command_thread(
             .current_dir(path.clone())
             .output()?;
 
-        write_to_stderr(&path, &output.stderr);
-        write_to_stdout(&path, &output.stdout);
+        write_to_stderr(&path, &output.stderr)?;
+        write_to_stdout(&path, &output.stdout)?;
     }
 
     Ok(())
@@ -968,7 +968,7 @@ fn status_thread(
         .current_dir(path.clone())
         .output()?;
 
-    write_to_stderr(path, &output.stderr);
+    write_to_stderr(path, &output.stderr)?;
 
     let stdout = io::BufReader::new(&output.stdout as &[u8]);
     for line_result in stdout.lines() {
@@ -1090,7 +1090,7 @@ fn mv(from: &str, to: &str) -> Result<()> {
                 .current_dir(to_repo.clone())
                 .output()?;
 
-            write_to_stderr(&to_repo, &output.stderr);
+            write_to_stderr(&to_repo, &output.stderr)?;
         }
 
         // Move the file
@@ -1102,7 +1102,7 @@ fn mv(from: &str, to: &str) -> Result<()> {
                 .args(&["rm", "-rf", from_rel.as_str()])
                 .current_dir(from_repo.clone())
                 .output()?;
-            write_to_stderr(&to_repo, &output.stderr);
+            write_to_stderr(&to_repo, &output.stderr)?;
         }
 
         // Add the newfile or folder
@@ -1111,7 +1111,7 @@ fn mv(from: &str, to: &str) -> Result<()> {
                 .args(&["add", to_rel.as_str()])
                 .current_dir(to_repo.clone())
                 .output()?;
-            write_to_stderr(&to_repo, &output.stderr);
+            write_to_stderr(&to_repo, &output.stderr)?;
         }
     }
 
@@ -1187,7 +1187,7 @@ fn main() -> Result<()> {
                     if index + 1 == args.len() {
                         argument_error("go requires at least one git command");
                     }
-                    go(&flags.path, &flags.branch, index + 1);
+                    go(&flags.path, &flags.branch, index + 1)?;
                     break;
                 }
                 "cmd" => {
@@ -1196,7 +1196,7 @@ fn main() -> Result<()> {
                             "cmd requires at least one shell command",
                         );
                     }
-                    cmd(&flags.path, &flags.branch, index + 1);
+                    cmd(&flags.path, &flags.branch, index + 1)?;
                     break;
                 }
                 "add" => {
@@ -1205,7 +1205,7 @@ fn main() -> Result<()> {
 Maybe you wanted to say 'git add .'?";
                         argument_error(error);
                     }
-                    add(&flags.path, index + 1);
+                    add(&flags.path, index + 1)?;
                     break;
                 }
                 "grep" => {
@@ -1220,7 +1220,7 @@ Maybe you wanted to say 'git add .'?";
                     break;
                 }
                 "ls" => {
-                    ls(&flags.path, &flags.branch);
+                    ls(&flags.path, &flags.branch)?;
                     break;
                 }
                 "commit" => {
@@ -1262,7 +1262,7 @@ Maybe you wanted to say 'git add .'?";
                             "replace requires at least two arguments",
                         );
                     }
-                    replace(&flags.path, &flags.branch, index + 1);
+                    replace(&flags.path, &flags.branch, index + 1)?;
                     break;
                 }
                 _ => argument_error("argument not recognised"),
