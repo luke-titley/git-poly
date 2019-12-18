@@ -1112,7 +1112,7 @@ impl Flags {
     pub fn new() -> Result<Self> {
         let path = regex::Regex::new(r".*")?;
         Ok(Flags {
-            path: path,
+            path,
             branch: None,
         })
     }
