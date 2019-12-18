@@ -831,8 +831,7 @@ fn command_thread(
     let output = process::Command::new("git")
         .args(&args)
         .current_dir(path.clone())
-        .output()
-        .unwrap();
+        .output()?;
 
     write_to_stderr(&path, &output.stderr);
 
@@ -842,7 +841,7 @@ fn command_thread(
     let has_modifications = {
         loop {
             if let Some(result) = lines.next() {
-                let line = result.unwrap();
+                let line = result?;
                 if c.is_match(line.as_str()) {
                     break true;
                 }
@@ -857,8 +856,7 @@ fn command_thread(
         let output = process::Command::new("git")
             .args(&["commit", "-m", message.as_str()])
             .current_dir(path.clone())
-            .output()
-            .unwrap();
+            .output()?;
 
         write_to_stderr(&path, &output.stderr);
         write_to_stdout(&path, &output.stdout);
