@@ -144,6 +144,7 @@ SUBCOMMANDS
     cmd [comands]             Execute one or more shell commands in each repo
     ls                        List all the git repos discovered
 
+    clone <url>               Clone a repository into a new directory
     add [-u] [<pathspec>...]  Add file contents to the index of it's repo
     commit [-m] <message>     Record changes to the repository
     grep <pattern>            Print lines matching a pattern
