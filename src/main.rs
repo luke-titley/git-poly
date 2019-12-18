@@ -30,6 +30,11 @@ type BranchRegex = Option<regex::Regex>;
 
 type PathSendError =
     std::sync::mpsc::SendError<std::option::Option<std::path::PathBuf>>;
+type StatusSendError = std::sync::mpsc::SendError<(
+    std::string::String,
+    std::string::String,
+    std::string::String,
+)>;
 type RecvError = std::sync::mpsc::RecvError;
 type ThreadError = std::boxed::Box<dyn std::any::Any + std::marker::Send>;
 
@@ -41,6 +46,7 @@ enum Error {
     NoneError(),
     IOError(io::Error),
     PathSendError(PathSendError),
+    StatusSendError(StatusSendError),
     RecvError(RecvError),
     RegexError(regex::Error),
     ThreadError(ThreadError),
@@ -85,6 +91,13 @@ impl From<std::option::NoneError> for Error {
 impl From<PathSendError> for Error {
     fn from(error: PathSendError) -> Self {
         Error::PathSendError(error)
+    }
+}
+
+//------------------------------------------------------------------------------
+impl From<StatusSendError> for Error {
+    fn from(error: StatusSendError) -> Self {
+        Error::StatusSendError(error)
     }
 }
 
@@ -934,48 +947,49 @@ fn print_title(title: char) -> &'static str {
 }
 
 //------------------------------------------------------------------------------
-fn status_thread(sender: &StatusSender, path: &path::PathBuf,
-                 splitter: &regex::Regex,
-                 branch_filter: &BranchRegex) {
+fn status_thread(
+    sender: &StatusSender,
+    path: &path::PathBuf,
+    splitter: &regex::Regex,
+    branch_filter: &BranchRegex,
+) -> Result<()> {
     // Filter based on branch name
     if let Some(pattern) = branch_filter {
-        if !filter_branch(&pattern, path).unwrap() {
-            return;
+        if !filter_branch(&pattern, path)? {
+            return Ok(());
         }
     }
 
-    let branch_name = get_branch_name(path).unwrap();
+    let branch_name = get_branch_name(path)?;
 
     let args = ["status", "--porcelain"];
     let output = process::Command::new("git")
         .args(&args)
         .current_dir(path.clone())
-        .output()
-        .unwrap();
+        .output()?;
 
     write_to_stderr(path, &output.stderr);
 
     let stdout = io::BufReader::new(&output.stdout as &[u8]);
     for line_result in stdout.lines() {
-        let line = line_result.unwrap();
+        let line = line_result?;
         let mut file_path = path::PathBuf::new();
-        let split: Vec<_> =
-            splitter.captures_iter(line.as_str()).collect();
+        let split: Vec<_> = splitter.captures_iter(line.as_str()).collect();
 
         if !split.is_empty() {
             let status = &split[0][1];
             let file = &split[0][2];
             file_path.push(path.clone());
             file_path.push(file);
-            sender
-                .send((
-                    branch_name.clone(),
-                    status.to_string(),
-                    file_path.to_str().unwrap().to_string(),
-                ))
-                .unwrap();
+            sender.send((
+                branch_name.clone(),
+                status.to_string(),
+                get(file_path.to_str())?.to_string(),
+            ))?;
         }
     }
+
+    Ok(())
 }
 
 //------------------------------------------------------------------------------
@@ -991,9 +1005,14 @@ fn status(regex: &regex::Regex, branch_regex: &BranchRegex) {
         let splitter = splitter_def.clone();
         let branch_filter = branch_regex.clone();
 
-        let thread = thread::spawn(move ||
-            status_thread(&sender, &path, &splitter, &branch_filter)
-        );
+        let thread = thread::spawn(move || {
+            handle_errors(status_thread(
+                &sender,
+                &path,
+                &splitter,
+                &branch_filter,
+            ))
+        });
 
         threads.push(thread);
     }
