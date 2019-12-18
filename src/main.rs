@@ -683,7 +683,7 @@ fn ls_files(regex: &regex::Regex, branch_regex: &BranchRegex) -> Result<()> {
 
 //------------------------------------------------------------------------------
 fn grep_thread(
-    expr: &String,
+    expr: &str,
     branch_filter: &BranchRegex,
     path: &path::PathBuf,
 ) -> Result<()> {
@@ -695,7 +695,7 @@ fn grep_thread(
     }
 
     let output = process::Command::new("git")
-        .args(&["grep", expr.as_str()])
+        .args(&["grep", expr])
         .current_dir(path.clone())
         .output()?;
 
@@ -820,8 +820,36 @@ fn ls(regex: &regex::Regex, branch_regex: &BranchRegex) -> Result<()> {
     Ok(())
 }
 
+//------------------------------------------------------------------------------
+fn clone_thread(url: &str) -> Result<()> {
+    Ok(())
+}
+
+//------------------------------------------------------------------------------
+fn clone(regex: &regex::Regex) -> Result<()> {
+    let mut threads = Vec::new();
+
+    // Loop over the lines in stdin
+    let stdin = io::stdin();
+    for line in stdin.lock().lines() {
+        let line = line?;
+        if regex.is_match(line.as_str()) {
+            threads.push(thread::spawn(move || {
+                handle_errors(clone_thread(line.as_str()))
+            }));
+        }
+    }
+
+    for thread in threads {
+        thread.join()?;
+    }
+
+    Ok(())
+}
+
+//------------------------------------------------------------------------------
 fn command_thread(
-    message: &String,
+    message: &str,
     c: &regex::Regex,
     branch_filter: &BranchRegex,
     path: &path::PathBuf,
@@ -860,7 +888,7 @@ fn command_thread(
     // If we have modifications then do a commit
     if has_modifications {
         let output = process::Command::new("git")
-            .args(&["commit", "-m", message.as_str()])
+            .args(&["commit", "-m", message])
             .current_dir(path.clone())
             .output()?;
 
@@ -1112,10 +1140,7 @@ struct Flags {
 impl Flags {
     pub fn new() -> Result<Self> {
         let path = regex::Regex::new(r".*")?;
-        Ok(Flags {
-            path,
-            branch: None,
-        })
+        Ok(Flags { path, branch: None })
     }
 }
 
@@ -1204,6 +1229,10 @@ Maybe you wanted to say 'git add .'?";
                 }
                 "ls" => {
                     ls(&flags.path, &flags.branch)?;
+                    break;
+                }
+                "clone" => {
+                    clone(&flags.path)?;
                     break;
                 }
                 "commit" => {
