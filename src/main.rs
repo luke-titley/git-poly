@@ -819,11 +819,11 @@ fn command_thread(
     c: &regex::Regex,
     branch_filter: &BranchRegex,
     path: &path::PathBuf,
-) {
+) -> Result<()> {
     // Filter based on branch name
     if let Some(pattern) = branch_filter {
         if !filter_branch(&pattern, &path).unwrap() {
-            return;
+            return Ok(());
         }
     }
 
@@ -863,6 +863,8 @@ fn command_thread(
         write_to_stderr(&path, &output.stderr);
         write_to_stdout(&path, &output.stdout);
     }
+
+    Ok(())
 }
 
 //------------------------------------------------------------------------------
@@ -877,7 +879,7 @@ fn commit(regex: &regex::Regex, branch_regex: &BranchRegex, msg: &str) {
         let branch_filter = branch_regex.clone();
 
         threads.push(thread::spawn(move || {
-            command_thread(&message, &c, &branch_filter, &path)
+            handle_errors(command_thread(&message, &c, &branch_filter, &path))
         }));
     }
 
