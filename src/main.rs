@@ -997,7 +997,7 @@ fn status(regex: &regex::Regex, branch_regex: &BranchRegex) -> Result<()> {
     let (send, recv): (StatusSender, StatusReceiver) = mpsc::channel();
 
     let splitter_def =
-        regex::Regex::new(r"(UU| M|M |MM|A | D|D |\?\?) (.*)").unwrap();
+        regex::Regex::new(r"(UU| M|M |MM|A | D|D |\?\?) (.*)")?;
 
     let mut threads = Vec::new();
     for path in RepoIterator::new(regex) {
@@ -1020,7 +1020,7 @@ fn status(regex: &regex::Regex, branch_regex: &BranchRegex) -> Result<()> {
 
     // Wait for all the threads to finish
     for thread in threads {
-        thread.join().unwrap();
+        thread.join()?;
     }
 
     // Store all the changes in a vector;
