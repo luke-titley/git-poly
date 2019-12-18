@@ -993,7 +993,7 @@ fn status_thread(
 }
 
 //------------------------------------------------------------------------------
-fn status(regex: &regex::Regex, branch_regex: &BranchRegex) {
+fn status(regex: &regex::Regex, branch_regex: &BranchRegex) -> Result<()> {
     let (send, recv): (StatusSender, StatusReceiver) = mpsc::channel();
 
     let splitter_def =
@@ -1067,6 +1067,8 @@ fn status(regex: &regex::Regex, branch_regex: &BranchRegex) {
         }
         println!();
     }
+
+    Ok(())
 }
 
 //------------------------------------------------------------------------------
@@ -1243,7 +1245,7 @@ Maybe you wanted to say 'git add .'?";
                     break;
                 }
                 "status" => {
-                    status(&flags.path, &flags.branch);
+                    status(&flags.path, &flags.branch)?;
                     break;
                 }
                 "mv" => {
