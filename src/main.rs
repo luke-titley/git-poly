@@ -48,7 +48,7 @@ enum Error {
     PathSend(PathSendError),
     StatusSend(StatusSendError),
     Recv(RecvError),
-    RegexError(regex::Error),
+    Regex(regex::Error),
     Thread(ThreadError),
     StripPrefix(path::StripPrefixError),
     RelativeToRepo(),
@@ -100,7 +100,7 @@ impl From<RecvError> for Error {
 //------------------------------------------------------------------------------
 impl From<regex::Error> for Error {
     fn from(error: regex::Error) -> Self {
-        Error::RegexError(error)
+        Error::Regex(error)
     }
 }
 
@@ -339,12 +339,13 @@ fn filter_branch(
 //------------------------------------------------------------------------------
 fn replace_in_file(
     from_regex: &regex::Regex,
-    to_regex: &String,
+    to_regex: &str,
     file_path: &path::Path,
 ) -> Result<()> {
     let mut output = Vec::<u8>::new();
     {
-        let input = fs::File::open(file_path.clone())?;
+        let full_path = path::PathBuf::from(file_path);
+        let input = fs::File::open(full_path.as_path())?;
         let buffered = io::BufReader::new(input);
         for line in buffered.lines() {
             let old_line = line?;
@@ -363,8 +364,8 @@ fn replace_in_file(
 fn replace_thread(
     branch_filter: &BranchRegex,
     path: &path::PathBuf,
-    from: &String,
-    to: &String,
+    from: &str,
+    to: &str,
 ) -> Result<()> {
     // Filter based on branch name
     if let Some(pattern) = branch_filter {
@@ -375,7 +376,7 @@ fn replace_thread(
 
     let from_exp = regex::Regex::new(&from)?;
 
-    let args = ["grep", "-l", from.as_str()];
+    let args = ["grep", "-l", from];
     let output = process::Command::new("git")
         .args(&args)
         .current_dir(path.clone())
@@ -391,7 +392,7 @@ fn replace_thread(
         for line in stdout.lines() {
             let file_path = path::Path::new(&path).join(line?);
             let from_regex = from_exp.clone();
-            let to_regex = to.clone();
+            let to_regex = String::from(to);
             let replace_thread = thread::spawn(move || {
                 handle_errors(replace_in_file(
                     &from_regex,
