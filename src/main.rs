@@ -43,16 +43,16 @@ type ThreadError = std::boxed::Box<dyn std::any::Any + std::marker::Send>;
 //------------------------------------------------------------------------------
 #[derive(Debug)]
 enum Error {
-    NoneError(),
-    IOError(io::Error),
-    PathSendError(PathSendError),
-    StatusSendError(StatusSendError),
-    RecvError(RecvError),
+    None(),
+    IO(io::Error),
+    PathSend(PathSendError),
+    StatusSend(StatusSendError),
+    Recv(RecvError),
     RegexError(regex::Error),
-    ThreadError(ThreadError),
-    StripPrefixError(path::StripPrefixError),
-    RelativeToRepoError(),
-    InfallibleError(std::convert::Infallible),
+    Thread(ThreadError),
+    StripPrefix(path::StripPrefixError),
+    RelativeToRepo(),
+    Infallible(std::convert::Infallible),
 }
 
 //------------------------------------------------------------------------------
@@ -65,35 +65,35 @@ impl fmt::Display for Error {
 fn get<S>(option: Option<S>) -> Result<S> {
     match option {
         Some(value) => Ok(value),
-        None => Err(Error::NoneError()),
+        None => Err(Error::None()),
     }
 }
 
 //------------------------------------------------------------------------------
 impl From<PathSendError> for Error {
     fn from(error: PathSendError) -> Self {
-        Error::PathSendError(error)
+        Error::PathSend(error)
     }
 }
 
 //------------------------------------------------------------------------------
 impl From<StatusSendError> for Error {
     fn from(error: StatusSendError) -> Self {
-        Error::StatusSendError(error)
+        Error::StatusSend(error)
     }
 }
 
 //------------------------------------------------------------------------------
 impl From<io::Error> for Error {
     fn from(error: io::Error) -> Self {
-        Error::IOError(error)
+        Error::IO(error)
     }
 }
 
 //------------------------------------------------------------------------------
 impl From<RecvError> for Error {
     fn from(error: RecvError) -> Self {
-        Error::RecvError(error)
+        Error::Recv(error)
     }
 }
 
@@ -107,21 +107,21 @@ impl From<regex::Error> for Error {
 //------------------------------------------------------------------------------
 impl From<ThreadError> for Error {
     fn from(error: ThreadError) -> Self {
-        Error::ThreadError(error)
+        Error::Thread(error)
     }
 }
 
 //------------------------------------------------------------------------------
 impl From<path::StripPrefixError> for Error {
     fn from(error: path::StripPrefixError) -> Self {
-        Error::StripPrefixError(error)
+        Error::StripPrefix(error)
     }
 }
 
 //------------------------------------------------------------------------------
 impl From<std::convert::Infallible> for Error {
     fn from(error: std::convert::Infallible) -> Self {
-        Error::InfallibleError(error)
+        Error::Infallible(error)
     }
 }
 
@@ -322,7 +322,7 @@ fn get_branch_name(path: &path::PathBuf) -> Result<String> {
 
     match result[0].as_ref() {
         Ok(r) => Ok(r.to_string()),
-        Err(_) => Err(Error::NoneError()),
+        Err(_) => Err(Error::None()),
     }
 }
 
@@ -607,7 +607,7 @@ fn relative_to_repo(
         }
     }
 
-    Err(Error::RelativeToRepoError())
+    Err(Error::RelativeToRepo())
 }
 
 //------------------------------------------------------------------------------
