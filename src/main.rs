@@ -847,7 +847,7 @@ fn clone_thread(dirs: &regex::Regex, url: &str) -> Result<()> {
 
             // Clone the repo
             let output = process::Command::new("git")
-                .args(&["clone", url])
+                .args(&["clone", url, "."])
                 .current_dir(path.as_path())
                 .output()?;
 
