@@ -1126,18 +1126,19 @@ struct Flags {
 
 //------------------------------------------------------------------------------
 impl Flags {
-    pub fn new() -> Self {
-        Flags {
-            path: regex::Regex::new(r".*").unwrap(),
+    pub fn new() -> Result<Self> {
+        let path = regex::Regex::new(r".*")?;
+        Ok(Flags {
+            path: path,
             branch: None,
-        }
+        })
     }
 }
 
 //------------------------------------------------------------------------------
 fn main() -> Result<()> {
     // The flags
-    let mut flags = Flags::new();
+    let mut flags = Flags::new()?;
 
     // Grab the arguments
     let env_args: Vec<String> = env::args().collect();
@@ -1167,7 +1168,7 @@ fn main() -> Result<()> {
                              (ie --path '.*')",
                         );
                     }
-                    flags.path = regex::Regex::new(&(args[index + 1])).unwrap();
+                    flags.path = regex::Regex::new(&(args[index + 1]))?;
                     skip = 1;
                 }
                 "--branch" | "-b" => {
@@ -1178,7 +1179,7 @@ fn main() -> Result<()> {
                         );
                     }
                     flags.branch =
-                        Some(regex::Regex::new(&(args[index + 1])).unwrap());
+                        Some(regex::Regex::new(&(args[index + 1]))?);
                     skip = 1;
                 }
                 // Sub-commands
