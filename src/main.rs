@@ -46,6 +46,7 @@ enum Error {
     ThreadError(ThreadError),
     StripPrefixError(path::StripPrefixError),
     RelativeToRepoError(),
+    InfallibleError(std::convert::Infallible),
 }
 
 //------------------------------------------------------------------------------
@@ -119,6 +120,13 @@ impl From<ThreadError> for Error {
 impl From<path::StripPrefixError> for Error {
     fn from(error: path::StripPrefixError) -> Self {
         Error::StripPrefixError(error)
+    }
+}
+
+//------------------------------------------------------------------------------
+impl From<std::convert::Infallible> for Error {
+    fn from(error: std::convert::Infallible) -> Self {
+        Error::InfallibleError(error)
     }
 }
 
@@ -876,7 +884,7 @@ fn commit(
     let changes = regex::Regex::new(r"^(M|A|D) .*")?;
 
     for path in RepoIterator::new(regex) {
-        let message = String::from_str(msg).unwrap();
+        let message = String::from_str(msg)?;
         let c = changes.clone();
         let branch_filter = branch_regex.clone();
 
@@ -926,6 +934,51 @@ fn print_title(title: char) -> &'static str {
 }
 
 //------------------------------------------------------------------------------
+fn status_thread(sender: &StatusSender, path: &path::PathBuf,
+                 splitter: &regex::Regex,
+                 branch_filter: &BranchRegex) {
+    // Filter based on branch name
+    if let Some(pattern) = branch_filter {
+        if !filter_branch(&pattern, path).unwrap() {
+            return;
+        }
+    }
+
+    let branch_name = get_branch_name(path).unwrap();
+
+    let args = ["status", "--porcelain"];
+    let output = process::Command::new("git")
+        .args(&args)
+        .current_dir(path.clone())
+        .output()
+        .unwrap();
+
+    write_to_stderr(path, &output.stderr);
+
+    let stdout = io::BufReader::new(&output.stdout as &[u8]);
+    for line_result in stdout.lines() {
+        let line = line_result.unwrap();
+        let mut file_path = path::PathBuf::new();
+        let split: Vec<_> =
+            splitter.captures_iter(line.as_str()).collect();
+
+        if !split.is_empty() {
+            let status = &split[0][1];
+            let file = &split[0][2];
+            file_path.push(path.clone());
+            file_path.push(file);
+            sender
+                .send((
+                    branch_name.clone(),
+                    status.to_string(),
+                    file_path.to_str().unwrap().to_string(),
+                ))
+                .unwrap();
+        }
+    }
+}
+
+//------------------------------------------------------------------------------
 fn status(regex: &regex::Regex, branch_regex: &BranchRegex) {
     let (send, recv): (StatusSender, StatusReceiver) = mpsc::channel();
 
@@ -938,47 +991,9 @@ fn status(regex: &regex::Regex, branch_regex: &BranchRegex) {
         let splitter = splitter_def.clone();
         let branch_filter = branch_regex.clone();
 
-        let thread = thread::spawn(move || {
-            // Filter based on branch name
-            if let Some(pattern) = branch_filter {
-                if !filter_branch(&pattern, &path).unwrap() {
-                    return;
-                }
-            }
-
-            let branch_name = get_branch_name(&path).unwrap();
-
-            let args = ["status", "--porcelain"];
-            let output = process::Command::new("git")
-                .args(&args)
-                .current_dir(path.clone())
-                .output()
-                .unwrap();
-
-            write_to_stderr(&path, &output.stderr);
-
-            let stdout = io::BufReader::new(&output.stdout as &[u8]);
-            for line_result in stdout.lines() {
-                let line = line_result.unwrap();
-                let mut file_path = path::PathBuf::new();
-                let split: Vec<_> =
-                    splitter.captures_iter(line.as_str()).collect();
-
-                if !split.is_empty() {
-                    let status = &split[0][1];
-                    let file = &split[0][2];
-                    file_path.push(path.clone());
-                    file_path.push(file);
-                    sender
-                        .send((
-                            branch_name.clone(),
-                            status.to_string(),
-                            file_path.to_str().unwrap().to_string(),
-                        ))
-                        .unwrap();
-                }
-            }
-        });
+        let thread = thread::spawn(move ||
+            status_thread(&sender, &path, &splitter, &branch_filter)
+        );
 
         threads.push(thread);
     }
