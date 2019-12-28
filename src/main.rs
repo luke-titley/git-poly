@@ -827,15 +827,14 @@ fn ls(regex: &regex::Regex, branch_regex: &BranchRegex) -> Result<()> {
 
 //------------------------------------------------------------------------------
 fn clone_thread(dirs: &regex::Regex, url: &str) -> Result<()> {
-    let result : Vec<_> = dirs.captures_iter(url).collect();
+    let result: Vec<_> = dirs.captures_iter(url).collect();
 
     println!("Matching {0}", url);
 
-    const FOLDER : usize = 2;
+    const FOLDER: usize = 2;
 
     if !result.is_empty() {
         for i in result {
-
             // Clone all the matches
             let mut path = path::PathBuf::from(".");
             path.push(&i[FOLDER]);
