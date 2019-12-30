@@ -1120,41 +1120,41 @@ impl<'a> std::iter::Iterator for StatusIterator<'a> {
     fn next(&mut self) -> Option<Self::Item> {
         // We're out of range
         if self.statuses.len() >= self.index {
-            return None;
-        }
+            None
 
         // We're on the first entry
-        if self.index == 0 {
+        } else if self.index == 0 {
             self.index += 1;
 
             let status = &(self.statuses[0]);
 
-            return Some(StatusIteration {
+            Some(StatusIteration {
                 msg: status,
                 print_branch: true,
                 print_tracking: true,
                 color: match_color(&(status.1).0),
-            });
-        }
+            })
 
         // We're on the next entry
-        let status = &(self.statuses[self.index]);
-        let previous_status = &(self.statuses[self.index - 1]);
+        } else {
+            let status = &(self.statuses[self.index]);
+            let previous_status = &(self.statuses[self.index - 1]);
 
-        let print_branch = status.0 != previous_status.0;
-        let print_tracking =
-            print_branch || (status.1).0 != (previous_status.1).0;
+            let print_branch = status.0 != previous_status.0;
+            let print_tracking =
+                print_branch || (status.1).0 != (previous_status.1).0;
 
-        let color = match_color(&(status.1).0);
+            let color = match_color(&(status.1).0);
 
-        self.index += 1;
+            self.index += 1;
 
-        Some(StatusIteration {
-            msg: status,
-            print_branch,
-            print_tracking,
-            color,
-        })
+            Some(StatusIteration {
+                msg: status,
+                print_branch,
+                print_tracking,
+                color,
+            })
+        }
     }
 }
 
