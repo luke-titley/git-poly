@@ -24,7 +24,7 @@ use colored::*;
 const GIT_REPO_URL : &str = r"^([a-zA-Z0-9-]+@[a-zA-Z0-9.-]+:|https?://[a-zA-Z0-9.-]+/)([a-zA-Z/-]+)(\.git)?";
 
 //------------------------------------------------------------------------------
-#[derive(PartialEq, Eq, PartialOrd, Ord)]
+#[derive(PartialEq, Eq, PartialOrd, Ord, Clone)]
 enum Tracking {
     Untracked,
     Unmerged,
@@ -33,7 +33,7 @@ enum Tracking {
 }
 
 //------------------------------------------------------------------------------
-#[derive(PartialEq, Eq, PartialOrd, Ord)]
+#[derive(PartialEq, Eq, PartialOrd, Ord, Clone)]
 enum Staging {
     Untracked,
     Added,
@@ -157,7 +157,7 @@ impl From<std::convert::Infallible> for Error {
 type Result<R> = std::result::Result<R, Error>;
 
 //------------------------------------------------------------------------------
-fn convert_to_status(input : &str) -> Result<Status> {
+fn convert_to_status(input: &str) -> Result<Status> {
     match input {
         "??" => Ok((Tracking::Untracked, Staging::Untracked)),
         " M" => Ok((Tracking::Unstaged, Staging::Modified)),
@@ -1004,21 +1004,21 @@ fn commit(
 }
 
 //------------------------------------------------------------------------------
-fn print_title(title: char) -> &'static str {
-    match title {
-        ' ' => {
+fn print_title(tracking: &Tracking) -> &'static str {
+    match *tracking {
+        Tracking::Unstaged => {
             println!("Changes not staged for commit:");
             println!("  (use \"git add <file>...\" to include in what will be committed)");
             println!();
             "red"
         }
-        '?' => {
+        Tracking::Untracked => {
             println!("Untracked files:");
             println!("  (use \"git add <file>...\" to include in what will be committed)");
             println!();
             "red"
         }
-        'U' => {
+        Tracking::Unmerged => {
             println!("You have unmerged paths.");
             println!("  (fix conflicts and run \"git commit\")");
             println!("  (use \"git merge --abort\" to abort the merge)");
@@ -1121,38 +1121,45 @@ fn status(regex: &regex::Regex, branch_regex: &BranchRegex) -> Result<()> {
     // Print the result
     if !changes.is_empty() {
         let mut branch_title = changes[0].0.clone();
-        let mut title = &(changes[0].1).0;
-        let mut old_title = changes[0].2.as_bytes()[0] as char;
+        let mut title = Some((changes[0].1).0.clone());
         let mut color;
         println!("on branch {0}", branch_title.cyan());
-        color = print_title(old_title);
+        color = print_title(&(changes[0].1).0);
         for change in changes {
-            let (branch, _, old_status, path) = change;
+            let (branch, status, old_status, path) = change;
 
             if branch_title != branch {
                 branch_title = branch;
-                old_title = '-';
+                title = None;
                 println!();
                 println!("on branch {0}", branch_title.cyan());
             }
-            let staged = old_status.as_bytes()[0] as char;
-            if old_title != staged {
-                if old_title != '-' {
-                    println!();
+
+            match title {
+                None => println!(),
+                Some(t) => {
+                    if t != status.0 {
+                        println!();
+                    }
                 }
-                old_title = staged;
-                color = print_title(old_title);
             }
 
-            match old_status.as_str() {
-                "M " | " M" => {
+            title = Some(status.0.clone());
+            color = print_title(&status.0);
+
+            match status.1 {
+                Staging::Modified => {
                     print!("{0}", "        modified:   ".color(color))
                 }
-                "D " | " D" => {
+                Staging::Deleted => {
                     print!("{0}", "        deleted:   ".color(color))
                 }
-                "A " => print!("{0}", "        new file:   ".color(color)),
-                "UU" => print!("{0}", "        both modified:   ".color(color)),
+                Staging::Added => {
+                    print!("{0}", "        new file:   ".color(color))
+                }
+                Staging::BothModified => {
+                    print!("{0}", "        both modified:   ".color(color))
+                }
                 _ => print!("        "),
             }
             println!("{0}", path.color(color));
