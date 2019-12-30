@@ -23,6 +23,24 @@ use colored::*;
 // The protocol, the path and the option .git extension
 const GIT_REPO_URL : &str = r"^([a-zA-Z0-9-]+@[a-zA-Z0-9.-]+:|https?://[a-zA-Z0-9.-]+/)([a-zA-Z/-]+)(\.git)?";
 
+//------------------------------------------------------------------------------
+enum Tracking {
+    Untracked,
+    Unmerged,
+    Unstaged,
+    Staged,
+}
+
+//------------------------------------------------------------------------------
+enum Staging {
+    Added,
+    Deleted,
+    Modified,
+}
+
+//------------------------------------------------------------------------------
+type Status = (Tracking, Staging);
+
 type Paths = vec::Vec<path::PathBuf>;
 type StatusMsg = (String, String, String);
 type StatusSender = mpsc::Sender<StatusMsg>;
@@ -43,22 +61,9 @@ type RecvError = std::sync::mpsc::RecvError;
 type ThreadError = std::boxed::Box<dyn std::any::Any + std::marker::Send>;
 
 //------------------------------------------------------------------------------
-enum Tracking {
-    Untracked,
-    Unmerged,
-    Unstaged,
-    Staged,
+fn convert_to_status(input : &str) -> Status {
+    (Tracking::Untracked, Staging::Added)
 }
-
-//------------------------------------------------------------------------------
-enum Staging {
-    Added,
-    Deleted,
-    Modified,
-}
-
-//------------------------------------------------------------------------------
-type Status = (Tracking, Staging);
 
 //------------------------------------------------------------------------------
 // Error
@@ -1039,6 +1044,7 @@ fn status_thread(
     write_to_stderr(path, &output.stderr)?;
 
     let stdout = io::BufReader::new(&output.stdout as &[u8]);
+
     for line_result in stdout.lines() {
         let line = line_result?;
         let mut file_path = path::PathBuf::new();
