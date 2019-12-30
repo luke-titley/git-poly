@@ -1085,13 +1085,16 @@ fn status_thread(
 // StatusIterator
 //------------------------------------------------------------------------------
 struct StatusIterator<'a> {
-    statuses : &'a vec::Vec<StatusMsg>
+    current_branch : Option<String>,
+    current_tracking : Option<Tracking>,
+    statuses : &'a vec::Vec<StatusMsg>,
 }
 
 //------------------------------------------------------------------------------
 impl<'a> StatusIterator<'a> {
     pub fn new(statuses : &'a vec::Vec<StatusMsg>) -> Self {
-        StatusIterator{ statuses }
+        StatusIterator{ current_branch: None, current_tracking : None,
+                        statuses }
     }
 }
 
