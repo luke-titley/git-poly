@@ -46,7 +46,7 @@ enum Staging {
 type Status = (Tracking, Staging);
 
 type Paths = vec::Vec<path::PathBuf>;
-type StatusMsg = (String, Status, String, String);
+type StatusMsg = (String, Status, String);
 type StatusSender = mpsc::Sender<StatusMsg>;
 type StatusReceiver = mpsc::Receiver<StatusMsg>;
 type PathMsg = Option<path::PathBuf>;
@@ -59,7 +59,6 @@ type PathSendError =
 type StatusSendError = std::sync::mpsc::SendError<(
     std::string::String,
     Status,
-    std::string::String,
     std::string::String,
 )>;
 type RecvError = std::sync::mpsc::RecvError;
@@ -1068,14 +1067,12 @@ fn status_thread(
 
         if !split.is_empty() {
             let status = convert_to_status(&split[0][1])?;
-            let old_status = &split[0][1];
             let file = &split[0][2];
             file_path.push(path.clone());
             file_path.push(file);
             sender.send((
                 branch_name.clone(),
                 status,
-                old_status.to_string(),
                 get(file_path.to_str())?.to_string(),
             ))?;
         }
@@ -1126,7 +1123,7 @@ fn status(regex: &regex::Regex, branch_regex: &BranchRegex) -> Result<()> {
         println!("on branch {0}", branch_title.cyan());
         color = print_title(&(changes[0].1).0);
         for change in changes {
-            let (branch, status, old_status, path) = change;
+            let (branch, status, path) = change;
 
             if branch_title != branch {
                 branch_title = branch;
