@@ -1118,8 +1118,8 @@ impl<'a> StatusIterator<'a> {
 impl<'a> std::iter::Iterator for StatusIterator<'a> {
     type Item = StatusIteration<'a>;
     fn next(&mut self) -> Option<Self::Item> {
-        // The status vector is empty
-        if self.statuses.is_empty() {
+        // We're out of range
+        if self.statuses.len() >= self.index {
             return None;
         }
 
@@ -1137,7 +1137,24 @@ impl<'a> std::iter::Iterator for StatusIterator<'a> {
             });
         }
 
-        None
+        // We're on the next entry
+        let status = &(self.statuses[self.index]);
+        let previous_status = &(self.statuses[self.index - 1]);
+
+        let print_branch = status.0 != previous_status.0;
+        let print_tracking =
+            print_branch || (status.1).0 != (previous_status.1).0;
+
+        let color = match_color(&(status.1).0);
+
+        self.index += 1;
+
+        Some(StatusIteration {
+            msg: status,
+            print_branch,
+            print_tracking,
+            color,
+        })
     }
 }
 
