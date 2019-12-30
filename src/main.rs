@@ -1121,26 +1121,27 @@ fn status(regex: &regex::Regex, branch_regex: &BranchRegex) -> Result<()> {
     // Print the result
     if !changes.is_empty() {
         let mut branch_title = changes[0].0.clone();
-        let mut title = changes[0].2.as_bytes()[0] as char;
+        let mut title = &(changes[0].1).0;
+        let mut old_title = changes[0].2.as_bytes()[0] as char;
         let mut color;
         println!("on branch {0}", branch_title.cyan());
-        color = print_title(title);
+        color = print_title(old_title);
         for change in changes {
             let (branch, _, old_status, path) = change;
 
             if branch_title != branch {
                 branch_title = branch;
-                title = '-';
+                old_title = '-';
                 println!();
                 println!("on branch {0}", branch_title.cyan());
             }
             let staged = old_status.as_bytes()[0] as char;
-            if title != staged {
-                if title != '-' {
+            if old_title != staged {
+                if old_title != '-' {
                     println!();
                 }
-                title = staged;
-                color = print_title(title);
+                old_title = staged;
+                color = print_title(old_title);
             }
 
             match old_status.as_str() {
