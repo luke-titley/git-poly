@@ -24,6 +24,7 @@ use colored::*;
 const GIT_REPO_URL : &str = r"^([a-zA-Z0-9-]+@[a-zA-Z0-9.-]+:|https?://[a-zA-Z0-9.-]+/)([a-zA-Z/-]+)(\.git)?";
 
 //------------------------------------------------------------------------------
+#[derive(PartialEq, Eq, PartialOrd, Ord)]
 enum Tracking {
     Untracked,
     Unmerged,
@@ -32,19 +33,20 @@ enum Tracking {
 }
 
 //------------------------------------------------------------------------------
+#[derive(PartialEq, Eq, PartialOrd, Ord)]
 enum Staging {
+    Untracked,
     Added,
     Deleted,
     Modified,
     BothModified,
-    Untracked,
 }
 
 //------------------------------------------------------------------------------
 type Status = (Tracking, Staging);
 
 type Paths = vec::Vec<path::PathBuf>;
-type StatusMsg = (String, String, String);
+type StatusMsg = (String, Status, String, String);
 type StatusSender = mpsc::Sender<StatusMsg>;
 type StatusReceiver = mpsc::Receiver<StatusMsg>;
 type PathMsg = Option<path::PathBuf>;
@@ -56,6 +58,7 @@ type PathSendError =
     std::sync::mpsc::SendError<std::option::Option<std::path::PathBuf>>;
 type StatusSendError = std::sync::mpsc::SendError<(
     std::string::String,
+    Status,
     std::string::String,
     std::string::String,
 )>;
@@ -1064,13 +1067,14 @@ fn status_thread(
         let split: Vec<_> = splitter.captures_iter(line.as_str()).collect();
 
         if !split.is_empty() {
-            let status = convert_to_status(&split[0][1]);
+            let status = convert_to_status(&split[0][1])?;
             let old_status = &split[0][1];
             let file = &split[0][2];
             file_path.push(path.clone());
             file_path.push(file);
             sender.send((
                 branch_name.clone(),
+                status,
                 old_status.to_string(),
                 get(file_path.to_str())?.to_string(),
             ))?;
@@ -1112,17 +1116,17 @@ fn status(regex: &regex::Regex, branch_regex: &BranchRegex) -> Result<()> {
 
     // Store all the changes in a vector;
     let mut changes = Vec::from_iter(recv.iter());
-    changes.sort(); // TODO LT: Use sort_by with a comparison function that orders the output similarly to git
+    changes.sort();
 
     // Print the result
     if !changes.is_empty() {
         let mut branch_title = changes[0].0.clone();
-        let mut title = changes[0].1.as_bytes()[0] as char;
+        let mut title = changes[0].2.as_bytes()[0] as char;
         let mut color;
         println!("on branch {0}", branch_title.cyan());
         color = print_title(title);
         for change in changes {
-            let (branch, status, path) = change;
+            let (branch, _, old_status, path) = change;
 
             if branch_title != branch {
                 branch_title = branch;
@@ -1130,7 +1134,7 @@ fn status(regex: &regex::Regex, branch_regex: &BranchRegex) -> Result<()> {
                 println!();
                 println!("on branch {0}", branch_title.cyan());
             }
-            let staged = status.as_bytes()[0] as char;
+            let staged = old_status.as_bytes()[0] as char;
             if title != staged {
                 if title != '-' {
                     println!();
@@ -1139,7 +1143,7 @@ fn status(regex: &regex::Regex, branch_regex: &BranchRegex) -> Result<()> {
                 color = print_title(title);
             }
 
-            match status.as_str() {
+            match old_status.as_str() {
                 "M " | " M" => {
                     print!("{0}", "        modified:   ".color(color))
                 }
