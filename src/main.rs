@@ -1126,7 +1126,7 @@ fn status(regex: &regex::Regex, branch_regex: &BranchRegex) -> Result<()> {
         let mut title = Some(first_tracking);
 
         for change in changes {
-            let (branch, status, path) = change;
+            let (branch, (tracking, staging), path) = change;
 
             if branch_title != branch {
                 branch_title = branch;
@@ -1137,19 +1137,19 @@ fn status(regex: &regex::Regex, branch_regex: &BranchRegex) -> Result<()> {
 
             match title.clone() {
                 None => {
-                    title = Some(status.0.clone());
-                    color = print_title(&status.0);
+                    title = Some(tracking.clone());
+                    color = print_title(&tracking);
                 },
                 Some(t) => {
-                    if t != status.0 {
+                    if t != tracking {
                         println!();
-                        title = Some(status.0.clone());
-                        color = print_title(&status.0);
+                        title = Some(tracking.clone());
+                        color = print_title(&tracking);
                     }
                 }
             }
 
-            match status.1 {
+            match staging {
                 Staging::Modified => {
                     print!("{0}", "        modified:   ".color(color))
                 }
