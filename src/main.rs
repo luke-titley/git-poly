@@ -1123,27 +1123,27 @@ fn status(regex: &regex::Regex, branch_regex: &BranchRegex) -> Result<()> {
         let mut color = print_title(&first_tracking);
 
         let mut branch_title = first_branch_title;
-        let mut title = Some(first_tracking);
+        let mut tracking_title = Some(first_tracking);
 
         for change in changes {
             let (branch, (tracking, staging), path) = change;
 
             if branch_title != branch {
                 branch_title = branch;
-                title = None;
+                tracking_title = None;
                 println!();
                 println!("on branch {0}", branch_title.cyan());
             }
 
-            match title.clone() {
+            match tracking_title.clone() {
                 None => {
-                    title = Some(tracking.clone());
+                    tracking_title = Some(tracking.clone());
                     color = print_title(&tracking);
                 }
                 Some(t) => {
                     if t != tracking {
                         println!();
-                        title = Some(tracking.clone());
+                        tracking_title = Some(tracking.clone());
                         color = print_title(&tracking);
                     }
                 }
