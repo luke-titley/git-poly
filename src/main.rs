@@ -1139,7 +1139,7 @@ fn status(regex: &regex::Regex, branch_regex: &BranchRegex) -> Result<()> {
                 None => {
                     title = Some(tracking.clone());
                     color = print_title(&tracking);
-                },
+                }
                 Some(t) => {
                     if t != tracking {
                         println!();
