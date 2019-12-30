@@ -1082,6 +1082,28 @@ fn status_thread(
 }
 
 //------------------------------------------------------------------------------
+// StatusIterator
+//------------------------------------------------------------------------------
+struct StatusIterator<'a> {
+    statuses : &'a vec::Vec<StatusMsg>
+}
+
+//------------------------------------------------------------------------------
+impl<'a> StatusIterator<'a> {
+    pub fn new(statuses : &'a vec::Vec<StatusMsg>) -> Self {
+        StatusIterator{ statuses }
+    }
+}
+
+//------------------------------------------------------------------------------
+impl<'a> std::iter::Iterator for StatusIterator<'a> {
+    type Item = &'a StatusMsg;
+    fn next(& mut self) -> Option<Self::Item> {
+        None
+    }
+}
+
+//------------------------------------------------------------------------------
 fn status(regex: &regex::Regex, branch_regex: &BranchRegex) -> Result<()> {
     let (send, recv): (StatusSender, StatusReceiver) = mpsc::channel();
 
