@@ -1064,13 +1064,14 @@ fn status_thread(
         let split: Vec<_> = splitter.captures_iter(line.as_str()).collect();
 
         if !split.is_empty() {
-            let status = &split[0][1];
+            let status = convert_to_status(&split[0][1]);
+            let old_status = &split[0][1];
             let file = &split[0][2];
             file_path.push(path.clone());
             file_path.push(file);
             sender.send((
                 branch_name.clone(),
-                status.to_string(),
+                old_status.to_string(),
                 get(file_path.to_str())?.to_string(),
             ))?;
         }
