@@ -1003,6 +1003,16 @@ fn commit(
 }
 
 //------------------------------------------------------------------------------
+fn match_color(tracking: &Tracking) -> &'static str {
+    match *tracking {
+        Tracking::Unstaged => "red",
+        Tracking::Untracked => "red",
+        Tracking::Unmerged => "red",
+        _ => "green",
+    }
+}
+
+//------------------------------------------------------------------------------
 fn print_title(tracking: &Tracking) -> &'static str {
     match *tracking {
         Tracking::Unstaged => {
@@ -1082,26 +1092,51 @@ fn status_thread(
 }
 
 //------------------------------------------------------------------------------
+struct StatusIteration<'a> {
+    msg: &'a StatusMsg,
+    print_branch: bool,
+    print_tracking: bool,
+    color: &'static str,
+}
+
+//------------------------------------------------------------------------------
 // StatusIterator
 //------------------------------------------------------------------------------
 struct StatusIterator<'a> {
-    current_branch : Option<String>,
-    current_tracking : Option<Tracking>,
-    statuses : &'a vec::Vec<StatusMsg>,
+    statuses: &'a vec::Vec<StatusMsg>,
+    index: usize,
 }
 
 //------------------------------------------------------------------------------
 impl<'a> StatusIterator<'a> {
-    pub fn new(statuses : &'a vec::Vec<StatusMsg>) -> Self {
-        StatusIterator{ current_branch: None, current_tracking : None,
-                        statuses }
+    pub fn new(statuses: &'a vec::Vec<StatusMsg>) -> Self {
+        StatusIterator { statuses, index: 0 }
     }
 }
 
 //------------------------------------------------------------------------------
 impl<'a> std::iter::Iterator for StatusIterator<'a> {
-    type Item = &'a StatusMsg;
-    fn next(& mut self) -> Option<Self::Item> {
+    type Item = StatusIteration<'a>;
+    fn next(&mut self) -> Option<Self::Item> {
+        // The status vector is empty
+        if self.statuses.is_empty() {
+            return None;
+        }
+
+        // We're on the first entry
+        if self.index == 0 {
+            self.index += 1;
+
+            let status = &(self.statuses[0]);
+
+            return Some(StatusIteration {
+                msg: status,
+                print_branch: true,
+                print_tracking: true,
+                color: match_color(&(status.1).0),
+            });
+        }
+
         None
     }
 }
