@@ -1121,39 +1121,38 @@ impl<'a> std::iter::Iterator for StatusIterator<'a> {
         // We're out of range
         if self.statuses.len() >= self.index {
             None
-
-        // We're on the first entry
-        } else if self.index == 0 {
-            self.index += 1;
-
-            let status = &(self.statuses[0]);
-
-            Some(StatusIteration {
-                msg: status,
-                print_branch: true,
-                print_tracking: true,
-                color: match_color(&(status.1).0),
-            })
-
-        // We're on the next entry
         } else {
-            let status = &(self.statuses[self.index]);
-            let previous_status = &(self.statuses[self.index - 1]);
-
-            let print_branch = status.0 != previous_status.0;
-            let print_tracking =
-                print_branch || (status.1).0 != (previous_status.1).0;
-
+            // The common values
+            let index = self.index;
+            let status = &(self.statuses[index]);
             let color = match_color(&(status.1).0);
 
+            // Increment
             self.index += 1;
 
-            Some(StatusIteration {
-                msg: status,
-                print_branch,
-                print_tracking,
-                color,
-            })
+            // We're on the first entry
+            if index == 0 {
+                Some(StatusIteration {
+                    msg: status,
+                    print_branch: true,
+                    print_tracking: true,
+                    color,
+                })
+
+            // We're on the next entry
+            } else {
+                let previous_status = &(self.statuses[index - 1]);
+                let print_branch = status.0 != previous_status.0;
+                let print_tracking =
+                    print_branch || (status.1).0 != (previous_status.1).0;
+
+                Some(StatusIteration {
+                    msg: status,
+                    print_branch,
+                    print_tracking,
+                    color,
+                })
+            }
         }
     }
 }
