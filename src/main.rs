@@ -1117,11 +1117,14 @@ fn status(regex: &regex::Regex, branch_regex: &BranchRegex) -> Result<()> {
 
     // Print the result
     if !changes.is_empty() {
-        let mut branch_title = changes[0].0.clone();
-        let mut title = Some((changes[0].1).0.clone());
-        let mut color;
-        println!("on branch {0}", branch_title.cyan());
-        color = print_title(&(changes[0].1).0);
+        let (first_branch_title, (first_tracking, _), _) = changes[0].clone();
+
+        println!("on branch {0}", first_branch_title.cyan());
+        let mut color = print_title(&first_tracking);
+
+        let mut branch_title = first_branch_title;
+        let mut title = Some(first_tracking);
+
         for change in changes {
             let (branch, status, path) = change;
 
