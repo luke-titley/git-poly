@@ -1132,17 +1132,19 @@ fn status(regex: &regex::Regex, branch_regex: &BranchRegex) -> Result<()> {
                 println!("on branch {0}", branch_title.cyan());
             }
 
-            match title {
-                None => println!(),
+            match title.clone() {
+                None => {
+                    title = Some(status.0.clone());
+                    color = print_title(&status.0);
+                },
                 Some(t) => {
                     if t != status.0 {
                         println!();
+                        title = Some(status.0.clone());
+                        color = print_title(&status.0);
                     }
                 }
             }
-
-            title = Some(status.0.clone());
-            color = print_title(&status.0);
 
             match status.1 {
                 Staging::Modified => {
