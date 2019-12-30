@@ -36,6 +36,8 @@ enum Staging {
     Added,
     Deleted,
     Modified,
+    BothModified,
+    Untracked,
 }
 
 //------------------------------------------------------------------------------
@@ -61,11 +63,6 @@ type RecvError = std::sync::mpsc::RecvError;
 type ThreadError = std::boxed::Box<dyn std::any::Any + std::marker::Send>;
 
 //------------------------------------------------------------------------------
-fn convert_to_status(input : &str) -> Status {
-    (Tracking::Untracked, Staging::Added)
-}
-
-//------------------------------------------------------------------------------
 // Error
 //------------------------------------------------------------------------------
 #[derive(Debug)]
@@ -80,6 +77,7 @@ enum Error {
     StripPrefix(path::StripPrefixError),
     RelativeToRepo(),
     Infallible(std::convert::Infallible),
+    UnableToParseStatus,
 }
 
 //------------------------------------------------------------------------------
@@ -154,6 +152,21 @@ impl From<std::convert::Infallible> for Error {
 
 //------------------------------------------------------------------------------
 type Result<R> = std::result::Result<R, Error>;
+
+//------------------------------------------------------------------------------
+fn convert_to_status(input : &str) -> Result<Status> {
+    match input {
+        "??" => Ok((Tracking::Untracked, Staging::Untracked)),
+        " M" => Ok((Tracking::Unstaged, Staging::Modified)),
+        " A" => Ok((Tracking::Unstaged, Staging::Added)),
+        " D" => Ok((Tracking::Unstaged, Staging::Deleted)),
+        "M " => Ok((Tracking::Staged, Staging::Modified)),
+        "A " => Ok((Tracking::Staged, Staging::Added)),
+        "D " => Ok((Tracking::Staged, Staging::Deleted)),
+        "UU" => Ok((Tracking::Unmerged, Staging::BothModified)),
+        _ => Err(Error::UnableToParseStatus),
+    }
+}
 
 //------------------------------------------------------------------------------
 // Usage
