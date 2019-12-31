@@ -1013,19 +1013,17 @@ fn match_color(tracking: &Tracking) -> &'static str {
 }
 
 //------------------------------------------------------------------------------
-fn print_title(tracking: &Tracking) -> &'static str {
+fn print_title(tracking: &Tracking) {
     match *tracking {
         Tracking::Unstaged => {
             println!("Changes not staged for commit:");
             println!("  (use \"git add <file>...\" to include in what will be committed)");
             println!();
-            "red"
         }
         Tracking::Untracked => {
             println!("Untracked files:");
             println!("  (use \"git add <file>...\" to include in what will be committed)");
             println!();
-            "red"
         }
         Tracking::Unmerged => {
             println!("You have unmerged paths.");
@@ -1034,12 +1032,10 @@ fn print_title(tracking: &Tracking) -> &'static str {
             println!();
             println!("Unmerged paths:");
             println!("  (use \"git add <file>...\" to mark resolution)");
-            "red"
         }
         _ => {
             println!("Changes to be commited:");
             println!();
-            "green"
         }
     }
 }
