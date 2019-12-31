@@ -1228,63 +1228,6 @@ fn status(regex: &regex::Regex, branch_regex: &BranchRegex) -> Result<()> {
         println!("{0}", path.color(i.color));
     }
 
-    /*
-
-    // Print the result
-    if !changes.is_empty() {
-        let (first_branch_title, (first_tracking, _), _) = changes[0].clone();
-
-        println!("on branch {0}", first_branch_title.cyan());
-        let mut color = print_title(&first_tracking);
-
-        let mut branch_title = first_branch_title;
-        let mut tracking_title = Some(first_tracking);
-
-        for change in changes {
-            let (branch, (tracking, staging), path) = change;
-
-            if branch_title != branch {
-                branch_title = branch;
-                tracking_title = None;
-                println!();
-                println!("on branch {0}", branch_title.cyan());
-            }
-
-            match tracking_title.clone() {
-                None => {
-                    tracking_title = Some(tracking.clone());
-                    color = print_title(&tracking);
-                }
-                Some(t) => {
-                    if t != tracking {
-                        println!();
-                        tracking_title = Some(tracking.clone());
-                        color = print_title(&tracking);
-                    }
-                }
-            }
-
-            match staging {
-                Staging::Modified => {
-                    print!("{0}", "        modified:   ".color(color))
-                }
-                Staging::Deleted => {
-                    print!("{0}", "        deleted:   ".color(color))
-                }
-                Staging::Added => {
-                    print!("{0}", "        new file:   ".color(color))
-                }
-                Staging::BothModified => {
-                    print!("{0}", "        both modified:   ".color(color))
-                }
-                _ => print!("        "),
-            }
-            println!("{0}", path.color(color));
-        }
-        println!();
-    }
-    */
-
     Ok(())
 }
 
