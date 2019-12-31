@@ -26,20 +26,20 @@ const GIT_REPO_URL : &str = r"^([a-zA-Z0-9-]+@[a-zA-Z0-9.-]+:|https?://[a-zA-Z0-
 //------------------------------------------------------------------------------
 #[derive(PartialEq, Eq, PartialOrd, Ord, Clone)]
 enum Tracking {
-    Untracked,
+    Staged,
     Unmerged,
     Unstaged,
-    Staged,
+    Untracked,
 }
 
 //------------------------------------------------------------------------------
 #[derive(PartialEq, Eq, PartialOrd, Ord, Clone)]
 enum Staging {
-    Untracked,
     Added,
     Deleted,
     Modified,
     BothModified,
+    Untracked,
 }
 
 //------------------------------------------------------------------------------
