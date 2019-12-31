@@ -1119,7 +1119,7 @@ impl<'a> std::iter::Iterator for StatusIterator<'a> {
     type Item = StatusIteration<'a>;
     fn next(&mut self) -> Option<Self::Item> {
         // We're out of range
-        if self.statuses.len() >= self.index {
+        if self.statuses.len() <= self.index {
             None
         } else {
             // The common values
@@ -1191,6 +1191,45 @@ fn status(regex: &regex::Regex, branch_regex: &BranchRegex) -> Result<()> {
     let mut changes = Vec::from_iter(recv.iter());
     changes.sort();
 
+    // Iterate over the changes printing in the git way
+    for i in StatusIterator::new(&changes) {
+        let (branch, (tracking, staging), path) = i.msg;
+
+        // Branch name if necessary
+        if i.print_branch {
+            println!();
+            println!("on branch {0}", branch.cyan());
+        }
+
+        // Tracking title if necessary
+        if i.print_tracking {
+            if !i.print_branch {
+                println!();
+            }
+            print_title(&tracking);
+        }
+
+        // Staging info
+        match staging {
+            Staging::Modified => {
+                print!("{0}", "        modified:   ".color(i.color))
+            }
+            Staging::Deleted => {
+                print!("{0}", "        deleted:   ".color(i.color))
+            }
+            Staging::Added => {
+                print!("{0}", "        new file:   ".color(i.color))
+            }
+            Staging::BothModified => {
+                print!("{0}", "        both modified:   ".color(i.color))
+            }
+            _ => print!("        "),
+        }
+        println!("{0}", path.color(i.color));
+    }
+
+    /*
+
     // Print the result
     if !changes.is_empty() {
         let (first_branch_title, (first_tracking, _), _) = changes[0].clone();
@@ -1244,6 +1283,7 @@ fn status(regex: &regex::Regex, branch_regex: &BranchRegex) -> Result<()> {
         }
         println!();
     }
+    */
 
     Ok(())
 }
