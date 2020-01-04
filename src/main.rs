@@ -182,8 +182,8 @@ OPTIONS:
     -b, --branch <regex>      Filter by current branch using given expression
 
 SUBCOMMANDS
-    go [git command]          Execute git commands in each repo
-    cmd [comands]             Execute one or more shell commands in each repo
+    go <git command>          Execute a git command in each repo
+    cmd <comand>              Execute a shell command in each repo
     ls                        List all the git repos discovered
 
     clone                     Clone the repositories listed in stdin
