@@ -2,12 +2,18 @@
 // Copyrite Luke Titley 2019
 //------------------------------------------------------------------------------
 mod channel;
+mod error;
 mod path;
+mod result;
 mod status;
+//------------------------------------------------------------------------------
+use channel::*;
+use error::*;
+use result::*;
+use status::*;
 //------------------------------------------------------------------------------
 use regex;
 use std::env;
-use std::fmt;
 use std::fs;
 use std::io;
 use std::iter::FromIterator;
@@ -21,111 +27,7 @@ use std::io::Write;
 
 use colored::*;
 
-use status::*;
-use channel::*;
-
 type BranchRegex = Option<regex::Regex>;
-
-type PathSendError =
-    std::sync::mpsc::SendError<std::option::Option<std::path::PathBuf>>;
-type StatusSendError = std::sync::mpsc::SendError<(
-    std::string::String,
-    Status,
-    std::string::String,
-)>;
-type RecvError = std::sync::mpsc::RecvError;
-type ThreadError = std::boxed::Box<dyn std::any::Any + std::marker::Send>;
-
-//------------------------------------------------------------------------------
-// Error
-//------------------------------------------------------------------------------
-#[derive(Debug)]
-enum Error {
-    None(),
-    IO(io::Error),
-    PathSend(PathSendError),
-    StatusSend(StatusSendError),
-    Recv(RecvError),
-    Regex(regex::Error),
-    Thread(ThreadError),
-    StripPrefix(path::StripPrefixError),
-    RelativeToRepo(),
-    Infallible(std::convert::Infallible),
-    UnableToParseStatus,
-}
-
-//------------------------------------------------------------------------------
-impl fmt::Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Error")
-    }
-}
-
-fn get<S>(option: Option<S>) -> Result<S> {
-    match option {
-        Some(value) => Ok(value),
-        None => Err(Error::None()),
-    }
-}
-
-//------------------------------------------------------------------------------
-impl From<PathSendError> for Error {
-    fn from(error: PathSendError) -> Self {
-        Error::PathSend(error)
-    }
-}
-
-//------------------------------------------------------------------------------
-impl From<StatusSendError> for Error {
-    fn from(error: StatusSendError) -> Self {
-        Error::StatusSend(error)
-    }
-}
-
-//------------------------------------------------------------------------------
-impl From<io::Error> for Error {
-    fn from(error: io::Error) -> Self {
-        Error::IO(error)
-    }
-}
-
-//------------------------------------------------------------------------------
-impl From<RecvError> for Error {
-    fn from(error: RecvError) -> Self {
-        Error::Recv(error)
-    }
-}
-
-//------------------------------------------------------------------------------
-impl From<regex::Error> for Error {
-    fn from(error: regex::Error) -> Self {
-        Error::Regex(error)
-    }
-}
-
-//------------------------------------------------------------------------------
-impl From<ThreadError> for Error {
-    fn from(error: ThreadError) -> Self {
-        Error::Thread(error)
-    }
-}
-
-//------------------------------------------------------------------------------
-impl From<path::StripPrefixError> for Error {
-    fn from(error: path::StripPrefixError) -> Self {
-        Error::StripPrefix(error)
-    }
-}
-
-//------------------------------------------------------------------------------
-impl From<std::convert::Infallible> for Error {
-    fn from(error: std::convert::Infallible) -> Self {
-        Error::Infallible(error)
-    }
-}
-
-//------------------------------------------------------------------------------
-type Result<R> = std::result::Result<R, Error>;
 
 //------------------------------------------------------------------------------
 fn convert_to_status(input: &str) -> Result<Status> {
