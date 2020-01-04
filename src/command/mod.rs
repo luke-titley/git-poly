@@ -1,4 +1,5 @@
 //------------------------------------------------------------------------------
+pub mod cmd;
 pub mod go;
 pub mod ls_files;
 pub mod replace;
