@@ -1,6 +1,8 @@
 //------------------------------------------------------------------------------
 // Copyrite Luke Titley 2019
 //------------------------------------------------------------------------------
+mod status;
+//------------------------------------------------------------------------------
 use regex;
 use std::env;
 use std::fmt;
@@ -18,32 +20,11 @@ use std::io::BufRead;
 use std::io::Write;
 
 use colored::*;
+use status::*;
 
 // This will break the git repo url https/http or git into three parts
 // The protocol, the path and the option .git extension
 const GIT_REPO_URL : &str = r"^([a-zA-Z0-9-]+@[a-zA-Z0-9.-]+:|https?://[a-zA-Z0-9.-]+/)([a-zA-Z/-]+)(\.git)?";
-
-//------------------------------------------------------------------------------
-#[derive(PartialEq, Eq, PartialOrd, Ord, Clone)]
-enum Tracking {
-    Staged,
-    Unmerged,
-    Unstaged,
-    Untracked,
-}
-
-//------------------------------------------------------------------------------
-#[derive(PartialEq, Eq, PartialOrd, Ord, Clone)]
-enum Staging {
-    Added,
-    Deleted,
-    Modified,
-    BothModified,
-    Untracked,
-}
-
-//------------------------------------------------------------------------------
-type Status = (Tracking, Staging);
 
 type Paths = vec::Vec<path::PathBuf>;
 type StatusMsg = (String, Status, String);
