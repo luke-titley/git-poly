@@ -1,7 +1,9 @@
 //------------------------------------------------------------------------------
 // Copyrite Luke Titley 2019
 //------------------------------------------------------------------------------
+mod branch_regex;
 mod channel;
+mod command;
 mod filter;
 mod git;
 mod error;
@@ -11,6 +13,7 @@ mod repoiterator;
 mod result;
 mod status;
 //------------------------------------------------------------------------------
+use branch_regex::*;
 use channel::*;
 use error::*;
 use io::*;
@@ -33,8 +36,6 @@ use std::io::BufReader;
 use std::io::Write;
 
 use colored::*;
-
-type BranchRegex = Option<regex::Regex>;
 
 //------------------------------------------------------------------------------
 fn convert_to_status(input: &str) -> Result<Status> {
@@ -338,60 +339,6 @@ fn add_entry(path: &mut path::PathBuf) -> Result<()> {
     // stdout/stderr
     write_to_stdout(&repo, &output.stdout)?;
     write_to_stderr(&repo, &output.stderr)?;
-
-    Ok(())
-}
-
-//------------------------------------------------------------------------------
-fn ls_files_thread(
-    branch_filter: &BranchRegex,
-    path: &path::PathBuf,
-) -> Result<()> {
-    // Filter based on branch name
-    if let Some(pattern) = branch_filter {
-        if !filter::branch(&pattern, &path)? {
-            return Ok(());
-        }
-    }
-
-    let output = process::Command::new("git")
-        .args(&["ls-files"])
-        .current_dir(path.clone())
-        .output()?;
-
-    write_to_stderr(&path, &output.stderr)?;
-
-    let outstream = std::io::stdout();
-    {
-        let _handle = outstream.lock();
-        let stdout = BufReader::new(&output.stdout as &[u8]);
-        let flat_path = path.as_path().join(path::Path::new(""));
-        for line in stdout.lines() {
-            print!("{0}", flat_path.display());
-            println!("{0}", line?);
-        }
-    }
-
-    Ok(())
-}
-
-//------------------------------------------------------------------------------
-fn ls_files(regex: &regex::Regex, branch_regex: &BranchRegex) -> Result<()> {
-    let mut threads = Vec::new();
-
-    // Loop through the results of what the walker is outputting
-    for path in RepoIterator::new(regex) {
-        let branch_filter = branch_regex.clone();
-
-        threads.push(thread::spawn(move || {
-            handle_errors(ls_files_thread(&branch_filter, &path))
-        }));
-    }
-
-    // Wait for all the threads to finish
-    for thread in threads {
-        thread.join()?;
-    }
 
     Ok(())
 }
@@ -1044,7 +991,7 @@ Maybe you wanted to say 'git add .'?";
                     break;
                 }
                 "ls-files" => {
-                    ls_files(&flags.path, &flags.branch)?;
+                    command::ls_files::run(&flags.path, &flags.branch)?;
                     break;
                 }
                 "ls" => {
