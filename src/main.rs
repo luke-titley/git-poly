@@ -2,6 +2,7 @@
 // Copyrite Luke Titley 2019
 //------------------------------------------------------------------------------
 mod channel;
+mod git;
 mod error;
 mod io;
 mod path;
@@ -50,33 +51,11 @@ fn convert_to_status(input: &str) -> Result<Status> {
 }
 
 //------------------------------------------------------------------------------
-fn get_branch_name(path: &path::PathBuf) -> Result<String> {
-    let output = process::Command::new("git")
-        .args(&["rev-parse", "--abbrev-ref", "HEAD"])
-        .current_dir(path.clone())
-        .output()?;
-
-    write_to_stderr(&path, &output.stderr)?;
-
-    let stdout = BufReader::new(&output.stdout as &[u8]);
-    let result: Vec<_> = stdout.lines().collect();
-
-    if result.is_empty() {
-        return Ok("HEADLESS".to_string());
-    }
-
-    match result[0].as_ref() {
-        Ok(r) => Ok(r.to_string()),
-        Err(_) => Err(Error::None()),
-    }
-}
-
-//------------------------------------------------------------------------------
 fn filter_branch(
     expression: &regex::Regex,
     path: &path::PathBuf,
 ) -> Result<bool> {
-    let branch_name = get_branch_name(path)?;
+    let branch_name = git::get_branch_name(path)?;
 
     Ok(expression.is_match(branch_name.as_str()))
 }
@@ -760,7 +739,7 @@ fn status_thread(
         }
     }
 
-    let branch_name = get_branch_name(path)?;
+    let branch_name = git::get_branch_name(path)?;
 
     let args = ["status", "--porcelain"];
     let output = process::Command::new("git")
