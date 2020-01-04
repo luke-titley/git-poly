@@ -22,11 +22,6 @@ use std::io::Write;
 use colored::*;
 use status::*;
 
-// This will break the git repo url https/http or git into three parts
-// The protocol, the path and the option .git extension
-const GIT_REPO_URL : &str = r"^([a-zA-Z0-9-]+@[a-zA-Z0-9.-]+:|https?://[a-zA-Z0-9.-]+/)([a-zA-Z/-]+)(\.git)?";
-
-type Paths = vec::Vec<path::PathBuf>;
 type StatusMsg = (String, Status, String);
 type StatusSender = mpsc::Sender<StatusMsg>;
 type StatusReceiver = mpsc::Receiver<StatusMsg>;
@@ -197,6 +192,7 @@ fn list_repos(regex: &regex::Regex, send: &PathSender) -> Result<()> {
     let mut current_dir = path::PathBuf::new();
     current_dir.push(".");
 
+    type Paths = vec::Vec<path::PathBuf>;
     let mut paths = Paths::new();
 
     paths.push(current_dir);
@@ -881,6 +877,10 @@ fn clone_thread(dirs: &regex::Regex, url: &str) -> Result<()> {
 //------------------------------------------------------------------------------
 fn clone(regex: &regex::Regex) -> Result<()> {
     let mut threads = Vec::new();
+
+    // This will break the git repo url https/http or git into three parts
+    // The protocol, the path and the option .git extension
+    const GIT_REPO_URL : &str = r"^([a-zA-Z0-9-]+@[a-zA-Z0-9.-]+:|https?://[a-zA-Z0-9.-]+/)([a-zA-Z/-]+)(\.git)?";
 
     let dirs_regex = regex::Regex::new(GIT_REPO_URL);
 
