@@ -13,38 +13,33 @@ mod repoiterator;
 mod result;
 mod status;
 //------------------------------------------------------------------------------
-use branch_regex::*;
-use io::*;
-use result::*;
-//------------------------------------------------------------------------------
 use regex;
 use std;
-use std::env;
 
 //------------------------------------------------------------------------------
 struct Flags {
     path: regex::Regex,
-    branch: BranchRegex,
+    branch: branch_regex::BranchRegex,
 }
 
 //------------------------------------------------------------------------------
 impl Flags {
-    pub fn new() -> Result<Self> {
+    pub fn new() -> result::Result<Self> {
         let path = regex::Regex::new(r".*")?;
         Ok(Flags { path, branch: None })
     }
 }
 
 //------------------------------------------------------------------------------
-fn main() -> Result<()> {
+fn main() -> result::Result<()> {
     // The flags
     let mut flags = Flags::new()?;
 
     // Grab the arguments
-    let env_args: Vec<String> = env::args().collect();
+    let env_args: Vec<String> = std::env::args().collect();
 
     if env_args.len() == 1 {
-        argument_error("Not enough arguments");
+        io::argument_error("Not enough arguments");
     }
 
     // Args is argv without the executable name
@@ -58,12 +53,12 @@ fn main() -> Result<()> {
             match arg.as_str() {
                 // Flags
                 "--help" | "-h" => {
-                    usage();
+                    io::usage();
                     break;
                 }
                 "--path" | "-p" => {
                     if (index + 1) == args.len() {
-                        argument_error(
+                        io::argument_error(
                             "--path requires an expression \
                              (ie --path '.*')",
                         );
@@ -73,7 +68,7 @@ fn main() -> Result<()> {
                 }
                 "--branch" | "-b" => {
                     if (index + 1) == args.len() {
-                        argument_error(
+                        io::argument_error(
                             "--branch requires an expression \
                              (ie --branch 'feature/foo.*')",
                         );
@@ -84,14 +79,14 @@ fn main() -> Result<()> {
                 // Sub-commands
                 "go" => {
                     if index + 1 == args.len() {
-                        argument_error("go requires at least one git command");
+                        io::argument_error("go requires at least one git command");
                     }
                     command::go::run(&flags.path, &flags.branch, index + 1)?;
                     break;
                 }
                 "cmd" => {
                     if index + 1 == args.len() {
-                        argument_error(
+                        io::argument_error(
                             "cmd requires at least one shell command",
                         );
                     }
@@ -102,14 +97,14 @@ fn main() -> Result<()> {
                     if index + 1 == args.len() {
                         let error = "Nothing specified, nothing added.
 Maybe you wanted to say 'git add .'?";
-                        argument_error(error);
+                        io::argument_error(error);
                     }
                     command::add::run(&flags.path, index + 1)?;
                     break;
                 }
                 "grep" => {
                     if index + 1 == args.len() {
-                        argument_error("Please provide the expression you would like to grep for");
+                        io::argument_error("Please provide the expression you would like to grep for");
                     }
                     command::grep::run(&flags.path, &flags.branch, args[index + 1].as_str())?;
                     break;
@@ -128,13 +123,13 @@ Maybe you wanted to say 'git add .'?";
                 }
                 "commit" => {
                     if index + 2 >= args.len() {
-                        argument_error(
+                        io::argument_error(
                             "commit requires at least arguments -m and a message",
                         );
                     }
 
                     if args[index + 1] != "-m" {
-                        argument_error("commit requires -m");
+                        io::argument_error("commit requires -m");
                     }
 
                     command::commit::run(
@@ -154,21 +149,21 @@ Maybe you wanted to say 'git add .'?";
                 }
                 "mv" => {
                     if index + 2 >= args.len() {
-                        argument_error("mv requires a source and a dest");
+                        io::argument_error("mv requires a source and a dest");
                     }
                     command::mv::run(&args[index + 1], &args[index + 2])?;
                     break;
                 }
                 "replace" => {
                     if index + 2 >= args.len() {
-                        argument_error(
+                        io::argument_error(
                             "replace requires at least two arguments",
                         );
                     }
                     command::replace::run(&flags.path, &flags.branch, index + 1)?;
                     break;
                 }
-                _ => argument_error("argument not recognised"),
+                _ => io::argument_error("argument not recognised"),
             }
         } else {
             skip -= 1;
