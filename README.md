@@ -12,11 +12,22 @@ git-poly is written in rust.
 - Regex based find and replace
 - There's no config file.
 
-# Prior-art
+# Git poly doesnt
+- Track repo dependencies
+- Specify how to organise your repos
+
+# Similar/Related projects
+
+You can use any of these tools along with 'git poly'.
+
 ## git slave
 [home] (http://gitslave.sourceforge.net/gits-man-page.html#get_status_on_all_branches)
 ## google repo
 [home] (https://gerrit.googlesource.com/git-repo)
+## git submodule
+[home] (https://git-scm.com/book/en/v2/Git-Tools-Submodules)
+## git subtree
+[home] (https://github.com/git/git/blob/master/contrib/subtree/git-subtree.txt)
 
 # The Idea
 Although putting all your code in a single repo simplifies a lot of things when
@@ -36,7 +47,7 @@ The heart of this is git poly status. Which performs a 'git status' on all repos
 and presents the results to make it appear as though you are in a single git repo.
 
 Most of the commands are mirrors of git commands, but designed to work across
-multiple projects, and give the effect if working on a single git repo.
+multiple projects, and give the effect of working on a single git repo.
 
 The exception are three new commands:
 - 'cmd' which will run whatever shell command you want across all repos in parallel. A bit like git submodule foreach
@@ -86,7 +97,7 @@ cat config.yml | grep ".*\.git" | git poly clone
 >> git p ls
 ```
 
-## The smart things
+## Additional things
 ### status
 ```
 >> git p status
