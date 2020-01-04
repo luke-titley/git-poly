@@ -52,28 +52,6 @@ fn convert_to_status(input: &str) -> Result<Status> {
 }
 
 //------------------------------------------------------------------------------
-fn ls(regex: &regex::Regex, branch_regex: &BranchRegex) -> Result<()> {
-    // Filtered traversal
-    if let Some(pattern) = branch_regex {
-        for path in RepoIterator::new(regex) {
-            if filter::branch(&pattern, &path)? {
-                let display = get(path.as_path().to_str())?;
-                println!("{0}", display);
-            }
-        }
-
-    // Unfiltered traversal
-    } else {
-        for path in RepoIterator::new(regex) {
-            let display = get(path.as_path().to_str())?;
-            println!("{0}", display);
-        }
-    }
-
-    Ok(())
-}
-
-//------------------------------------------------------------------------------
 fn clone_thread(dirs: &regex::Regex, url: &str) -> Result<()> {
     let result: Vec<_> = dirs.captures_iter(url).collect();
 
@@ -586,7 +564,7 @@ Maybe you wanted to say 'git add .'?";
                     break;
                 }
                 "ls" => {
-                    ls(&flags.path, &flags.branch)?;
+                    command::ls::run(&flags.path, &flags.branch)?;
                     break;
                 }
                 "clone" => {
