@@ -33,7 +33,6 @@ use std::vec;
 
 use std::io::BufRead;
 use std::io::BufReader;
-use std::io::Write;
 
 use colored::*;
 
@@ -50,60 +49,6 @@ fn convert_to_status(input: &str) -> Result<Status> {
         "UU" => Ok((Tracking::Unmerged, Staging::BothModified)),
         _ => Err(Error::UnableToParseStatus),
     }
-}
-
-//------------------------------------------------------------------------------
-fn go_thread(
-    path: &path::PathBuf,
-    branch_filter: &BranchRegex,
-    args_pos: usize,
-) -> Result<()> {
-    // Filter based on branch name
-    if let Some(pattern) = branch_filter {
-        if !filter::branch(&pattern, &path)? {
-            return Ok(());
-        }
-    }
-
-    let args: Vec<String> = env::args().collect();
-    let output = process::Command::new("git")
-        .args(&args[args_pos + 1..])
-        .current_dir(path.clone())
-        .output()?;
-
-    // stdout/stderr
-    write_to_stdout(&path, &output.stdout)?;
-    write_to_stderr(&path, &output.stderr)?;
-
-    Ok(())
-}
-
-//------------------------------------------------------------------------------
-fn go(
-    path_regex: &regex::Regex,
-    branch_regex: &BranchRegex,
-    args_pos: usize,
-) -> Result<()> {
-    let mut threads = Vec::new();
-
-    // Loop through the results of what the walker is outputting
-    for path in RepoIterator::new(path_regex) {
-        let branch_filter = branch_regex.clone();
-
-        // Execute a new thread for processing this result
-        let thread = thread::spawn(move || {
-            handle_errors(go_thread(&path, &branch_filter, args_pos))
-        });
-
-        threads.push(thread);
-    }
-
-    // Wait for all the threads to finish
-    for thread in threads {
-        thread.join()?;
-    }
-
-    Ok(())
 }
 
 //------------------------------------------------------------------------------
@@ -853,7 +798,7 @@ fn main() -> Result<()> {
                     if index + 1 == args.len() {
                         argument_error("go requires at least one git command");
                     }
-                    go(&flags.path, &flags.branch, index + 1)?;
+                    command::go::run(&flags.path, &flags.branch, index + 1)?;
                     break;
                 }
                 "cmd" => {
