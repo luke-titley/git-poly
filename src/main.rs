@@ -3,6 +3,7 @@
 //------------------------------------------------------------------------------
 mod channel;
 mod error;
+mod io;
 mod path;
 mod repoiterator;
 mod result;
@@ -10,14 +11,15 @@ mod status;
 //------------------------------------------------------------------------------
 use channel::*;
 use error::*;
+use io::*;
 use repoiterator::*;
 use result::*;
 use status::*;
 //------------------------------------------------------------------------------
 use regex;
+use std;
 use std::env;
 use std::fs;
-use std::io;
 use std::iter::FromIterator;
 use std::process;
 use std::str::FromStr;
@@ -25,6 +27,7 @@ use std::thread;
 use std::vec;
 
 use std::io::BufRead;
+use std::io::BufReader;
 use std::io::Write;
 
 use colored::*;
@@ -47,86 +50,6 @@ fn convert_to_status(input: &str) -> Result<Status> {
 }
 
 //------------------------------------------------------------------------------
-// Usage
-//------------------------------------------------------------------------------
-const USAGE: &str = "
-USAGE:
-    git poly [OPTIONS] [SUBCOMMAND]
-
-OPTIONS:
-    -p, --path <regex>        Filter by repo file path using given expression
-    -b, --branch <regex>      Filter by current branch using given expression
-
-SUBCOMMANDS
-    go <git command>          Execute a git command in each repo
-    cmd <comand>              Execute a shell command in each repo
-    ls                        List all the git repos discovered
-
-    clone                     Clone the repositories listed in stdin
-    add [-u] [<pathspec>...]  Add file contents to the index of it's repo
-    commit [-m] <message>     Record changes to the repository
-    grep <pattern>            Print lines matching a pattern
-    ls-files                  Show information about files in the index and the working tree
-    mv <from> <to>            Move or rename a file, a directory, or a symlink
-    reset                     Reset current HEAD to the specified state
-    status                    Show the merged working tree status of all the repos
-
-    replace <from> <to>       Find and replace all occurances of FROM with TO
-";
-
-//------------------------------------------------------------------------------
-pub fn argument_error(msg: &str) {
-    println!("error: {0}\n{1}", msg, USAGE);
-    std::process::exit(1);
-}
-
-//------------------------------------------------------------------------------
-fn usage() {
-    println!("{0}", USAGE);
-}
-
-//------------------------------------------------------------------------------
-fn write_to_out(
-    handle: &mut dyn io::Write,
-    repo: &path::PathBuf,
-    output: &[u8],
-) -> Result<()> {
-    let display = get(repo.as_path().to_str())?;
-
-    writeln!(handle, "{0}", display.cyan())?;
-    handle.write_all(&output)?;
-    writeln!(handle)?;
-
-    Ok(())
-}
-
-//------------------------------------------------------------------------------
-fn write_to_stdout(repo: &path::PathBuf, output: &[u8]) -> Result<()> {
-    // stdout
-    if !output.is_empty() {
-        let stdout = io::stdout();
-        {
-            let mut handle = stdout.lock();
-            write_to_out(&mut handle, repo, output)?;
-        }
-    }
-    Ok(())
-}
-
-//------------------------------------------------------------------------------
-fn write_to_stderr(repo: &path::PathBuf, output: &[u8]) -> Result<()> {
-    // stderr
-    if !output.is_empty() {
-        let stderr = io::stderr();
-        {
-            let mut handle = stderr.lock();
-            write_to_out(&mut handle, repo, output)?;
-        }
-    }
-    Ok(())
-}
-
-//------------------------------------------------------------------------------
 fn get_branch_name(path: &path::PathBuf) -> Result<String> {
     let output = process::Command::new("git")
         .args(&["rev-parse", "--abbrev-ref", "HEAD"])
@@ -135,7 +58,7 @@ fn get_branch_name(path: &path::PathBuf) -> Result<String> {
 
     write_to_stderr(&path, &output.stderr)?;
 
-    let stdout = io::BufReader::new(&output.stdout as &[u8]);
+    let stdout = BufReader::new(&output.stdout as &[u8]);
     let result: Vec<_> = stdout.lines().collect();
 
     if result.is_empty() {
@@ -168,7 +91,7 @@ fn replace_in_file(
     {
         let full_path = path::PathBuf::from(file_path);
         let input = fs::File::open(full_path.as_path())?;
-        let buffered = io::BufReader::new(input);
+        let buffered = BufReader::new(input);
         for line in buffered.lines() {
             let old_line = line?;
             let new_line =
@@ -210,7 +133,7 @@ fn replace_thread(
     // perform the find and replace
     if !output.stdout.is_empty() {
         let mut replace_threads = Vec::new();
-        let stdout = io::BufReader::new(&output.stdout as &[u8]);
+        let stdout = BufReader::new(&output.stdout as &[u8]);
         for line in stdout.lines() {
             let file_path = path::Path::new(&path).join(line?);
             let from_regex = from_exp.clone();
@@ -468,10 +391,10 @@ fn ls_files_thread(
 
     write_to_stderr(&path, &output.stderr)?;
 
-    let outstream = io::stdout();
+    let outstream = std::io::stdout();
     {
         let _handle = outstream.lock();
-        let stdout = io::BufReader::new(&output.stdout as &[u8]);
+        let stdout = BufReader::new(&output.stdout as &[u8]);
         let flat_path = path.as_path().join(path::Path::new(""));
         for line in stdout.lines() {
             print!("{0}", flat_path.display());
@@ -523,10 +446,10 @@ fn grep_thread(
 
     write_to_stderr(&path, &output.stderr)?;
 
-    let outstream = io::stdout();
+    let outstream = std::io::stdout();
     {
         let _handle = outstream.lock();
-        let stdout = io::BufReader::new(&output.stdout as &[u8]);
+        let stdout = BufReader::new(&output.stdout as &[u8]);
         let flat_path = path.as_path().join(path::Path::new(""));
         for line in stdout.lines() {
             print!("{0}", flat_path.display());
@@ -687,7 +610,7 @@ fn clone(regex: &regex::Regex) -> Result<()> {
     let dirs_regex = regex::Regex::new(GIT_REPO_URL);
 
     // Loop over the lines in stdin
-    let stdin = io::stdin();
+    let stdin = std::io::stdin();
     for l in stdin.lock().lines() {
         let line = l?;
         if regex.is_match(line.as_str()) {
@@ -728,7 +651,7 @@ fn command_thread(
     write_to_stderr(&path, &output.stderr)?;
 
     // Search for modifications
-    let stdout = io::BufReader::new(&output.stdout as &[u8]);
+    let stdout = BufReader::new(&output.stdout as &[u8]);
     let mut lines = stdout.lines();
     let has_modifications = {
         loop {
@@ -847,7 +770,7 @@ fn status_thread(
 
     write_to_stderr(path, &output.stderr)?;
 
-    let stdout = io::BufReader::new(&output.stdout as &[u8]);
+    let stdout = BufReader::new(&output.stdout as &[u8]);
 
     for line_result in stdout.lines() {
         let line = line_result?;
