@@ -2,6 +2,7 @@
 // Copyrite Luke Titley 2019
 //------------------------------------------------------------------------------
 mod channel;
+mod filter;
 mod git;
 mod error;
 mod io;
@@ -51,16 +52,6 @@ fn convert_to_status(input: &str) -> Result<Status> {
 }
 
 //------------------------------------------------------------------------------
-fn filter_branch(
-    expression: &regex::Regex,
-    path: &path::PathBuf,
-) -> Result<bool> {
-    let branch_name = git::get_branch_name(path)?;
-
-    Ok(expression.is_match(branch_name.as_str()))
-}
-
-//------------------------------------------------------------------------------
 fn replace_in_file(
     from_regex: &regex::Regex,
     to_regex: &str,
@@ -93,7 +84,7 @@ fn replace_thread(
 ) -> Result<()> {
     // Filter based on branch name
     if let Some(pattern) = branch_filter {
-        if !filter_branch(&pattern, &path)? {
+        if !filter::branch(&pattern, &path)? {
             return Ok(());
         }
     }
@@ -177,7 +168,7 @@ fn go_thread(
 ) -> Result<()> {
     // Filter based on branch name
     if let Some(pattern) = branch_filter {
-        if !filter_branch(&pattern, &path)? {
+        if !filter::branch(&pattern, &path)? {
             return Ok(());
         }
     }
@@ -231,7 +222,7 @@ fn cmd_thread(
 ) -> Result<()> {
     // Filter based on branch name
     if let Some(pattern) = branch_filter {
-        if !filter_branch(&pattern, &path)? {
+        if !filter::branch(&pattern, &path)? {
             return Ok(());
         }
     }
@@ -358,7 +349,7 @@ fn ls_files_thread(
 ) -> Result<()> {
     // Filter based on branch name
     if let Some(pattern) = branch_filter {
-        if !filter_branch(&pattern, &path)? {
+        if !filter::branch(&pattern, &path)? {
             return Ok(());
         }
     }
@@ -413,7 +404,7 @@ fn grep_thread(
 ) -> Result<()> {
     // Filter based on branch name
     if let Some(pattern) = branch_filter {
-        if !filter_branch(&pattern, &path)? {
+        if !filter::branch(&pattern, &path)? {
             return Ok(());
         }
     }
@@ -507,7 +498,7 @@ fn reset(regex: &regex::Regex, branch_regex: &BranchRegex) -> Result<()> {
     // Filtered traversal
     if let Some(pattern) = branch_regex {
         for path in RepoIterator::new(regex) {
-            if filter_branch(&pattern, &path)? {
+            if filter::branch(&pattern, &path)? {
                 reset_all(path)?;
             }
         }
@@ -527,7 +518,7 @@ fn ls(regex: &regex::Regex, branch_regex: &BranchRegex) -> Result<()> {
     // Filtered traversal
     if let Some(pattern) = branch_regex {
         for path in RepoIterator::new(regex) {
-            if filter_branch(&pattern, &path)? {
+            if filter::branch(&pattern, &path)? {
                 let display = get(path.as_path().to_str())?;
                 println!("{0}", display);
             }
@@ -616,7 +607,7 @@ fn command_thread(
 ) -> Result<()> {
     // Filter based on branch name
     if let Some(pattern) = branch_filter {
-        if !filter_branch(&pattern, &path)? {
+        if !filter::branch(&pattern, &path)? {
             return Ok(());
         }
     }
@@ -734,7 +725,7 @@ fn status_thread(
 ) -> Result<()> {
     // Filter based on branch name
     if let Some(pattern) = branch_filter {
-        if !filter_branch(&pattern, path)? {
+        if !filter::branch(&pattern, path)? {
             return Ok(());
         }
     }
