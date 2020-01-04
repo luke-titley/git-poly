@@ -1,6 +1,8 @@
 //------------------------------------------------------------------------------
 // Copyrite Luke Titley 2019
 //------------------------------------------------------------------------------
+mod channel;
+mod path;
 mod status;
 //------------------------------------------------------------------------------
 use regex;
@@ -9,10 +11,8 @@ use std::fmt;
 use std::fs;
 use std::io;
 use std::iter::FromIterator;
-use std::path;
 use std::process;
 use std::str::FromStr;
-use std::sync::mpsc;
 use std::thread;
 use std::vec;
 
@@ -20,14 +20,10 @@ use std::io::BufRead;
 use std::io::Write;
 
 use colored::*;
-use status::*;
 
-type StatusMsg = (String, Status, String);
-type StatusSender = mpsc::Sender<StatusMsg>;
-type StatusReceiver = mpsc::Receiver<StatusMsg>;
-type PathMsg = Option<path::PathBuf>;
-type PathSender = mpsc::Sender<PathMsg>;
-type PathReceiver = mpsc::Receiver<PathMsg>;
+use status::*;
+use channel::*;
+
 type BranchRegex = Option<regex::Regex>;
 
 type PathSendError =
@@ -256,7 +252,7 @@ struct RepoIterator {
 //------------------------------------------------------------------------------
 impl RepoIterator {
     fn new(regex: &regex::Regex) -> Self {
-        let (send, recv): (PathSender, PathReceiver) = mpsc::channel();
+        let (send, recv) = path_channel();
 
         // Kick off the traversal thread. It's detached by default.
         let regex_copy = regex.clone();
@@ -1136,7 +1132,7 @@ impl<'a> std::iter::Iterator for StatusIterator<'a> {
 
 //------------------------------------------------------------------------------
 fn status(regex: &regex::Regex, branch_regex: &BranchRegex) -> Result<()> {
-    let (send, recv): (StatusSender, StatusReceiver) = mpsc::channel();
+    let (send, recv) = status_channel();
 
     let splitter_def = regex::Regex::new(r"(UU| M|M |MM|A | D|D |\?\?) (.*)")?;
 
