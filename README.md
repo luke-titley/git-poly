@@ -11,6 +11,8 @@ git-poly is written in rust.
   repo a new thread is created to process it.
 - Regex based find and replace
 - There's no config file.
+- Aligns very closely with git, only four more very straight forward commands
+are added.
 
 # Git poly doesnt
 - Track repo dependencies
