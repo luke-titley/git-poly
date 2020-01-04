@@ -22,14 +22,10 @@ are added.
 
 You can use any of these tools along with 'git poly'.
 
-## git slave
-[home] (http://gitslave.sourceforge.net/gits-man-page.html#get_status_on_all_branches)
-## google repo
-[home] (https://gerrit.googlesource.com/git-repo)
-## git submodule
-[home] (https://git-scm.com/book/en/v2/Git-Tools-Submodules)
-## git subtree
-[home] (https://github.com/git/git/blob/master/contrib/subtree/git-subtree.txt)
+- [git slave] (http://gitslave.sourceforge.net/gits-man-page.html#get_status_on_all_branches)
+- [google repo] (https://gerrit.googlesource.com/git-repo)
+- [git submodule] (https://git-scm.com/book/en/v2/Git-Tools-Submodules)
+- [git subtree] (https://github.com/git/git/blob/master/contrib/subtree/git-subtree.txt)
 
 # The Goal
 ## In Short
@@ -77,12 +73,15 @@ the branch the repo is currently tracking.
 - It's written in perl.
 - It's doesn't do as many operations in parallel.
 - It doesn't have the goal of presenting multiple repose as one repo.
+
 #### google repo
 - It's written in python.
 - It's doesn't do as many operations in parallel.
 - It doesn't have the goal of presenting multiple repose as one repo.
+
 #### git submodule
 - It doesn't have the goal of presenting multiple repose as one repo.
+
 #### git subtree
 - It's a good alternative.
 
