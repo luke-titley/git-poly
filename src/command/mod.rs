@@ -5,4 +5,5 @@ pub mod go;
 pub mod grep;
 pub mod ls_files;
 pub mod replace;
+pub mod reset;
 //------------------------------------------------------------------------------
