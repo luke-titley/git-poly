@@ -87,31 +87,8 @@ fn add_changed(regex: &regex::Regex) -> Result<()> {
 }
 
 //------------------------------------------------------------------------------
-fn relative_to_repo(
-    path: &mut path::PathBuf,
-) -> Result<(path::PathBuf, String)> {
-    for parent in path.ancestors() {
-        if !parent.as_os_str().is_empty() {
-            let mut repo = path::PathBuf::new(); // TODO LT: Wanted to keep this around but need nightly to use 'clear'.
-            repo.push(parent);
-            repo.pop();
-            repo.push(".git");
-
-            if repo.exists() {
-                repo.pop();
-                let relative_path =
-                    get(path.as_path().strip_prefix(repo.as_path())?.to_str())?;
-                return Ok((repo, relative_path.to_string()));
-            }
-        }
-    }
-
-    Err(Error::RelativeToRepo())
-}
-
-//------------------------------------------------------------------------------
 fn add_entry(path: &mut path::PathBuf) -> Result<()> {
-    let (repo, relative_path) = relative_to_repo(path)?;
+    let (repo, relative_path) = git::relative_to_repo(path)?;
     let args = ["add", relative_path.as_str()];
     let output = process::Command::new("git")
         .args(&args)
@@ -640,8 +617,8 @@ fn mv(from: &str, to: &str) -> Result<()> {
     from_path.push(from);
     to_path.push(to);
 
-    let (from_repo, from_rel) = relative_to_repo(&mut from_path)?;
-    let (to_repo, to_rel) = relative_to_repo(&mut to_path)?;
+    let (from_repo, from_rel) = git::relative_to_repo(&mut from_path)?;
+    let (to_repo, to_rel) = git::relative_to_repo(&mut to_path)?;
 
     if from_path.exists() {
         // Remove the destionation if it exists

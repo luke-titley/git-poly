@@ -29,3 +29,25 @@ pub fn get_branch_name(path: &path::PathBuf) -> result::Result<String> {
     }
 }
 
+//------------------------------------------------------------------------------
+pub fn relative_to_repo(
+    path: &mut path::PathBuf,
+) -> result::Result<(path::PathBuf, String)> {
+    for parent in path.ancestors() {
+        if !parent.as_os_str().is_empty() {
+            let mut repo = path::PathBuf::new(); // TODO LT: Wanted to keep this around but need nightly to use 'clear'.
+            repo.push(parent);
+            repo.pop();
+            repo.push(".git");
+
+            if repo.exists() {
+                repo.pop();
+                let relative_path =
+                    result::get(path.as_path().strip_prefix(repo.as_path())?.to_str())?;
+                return Ok((repo, relative_path.to_string()));
+            }
+        }
+    }
+
+    Err(error::Error::RelativeToRepo())
+}
