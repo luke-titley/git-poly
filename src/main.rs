@@ -4,9 +4,9 @@
 mod branch_regex;
 mod channel;
 mod command;
+mod error;
 mod filter;
 mod git;
-mod error;
 mod io;
 mod path;
 mod repoiterator;
@@ -79,7 +79,9 @@ fn main() -> result::Result<()> {
                 // Sub-commands
                 "go" => {
                     if index + 1 == args.len() {
-                        io::argument_error("go requires at least one git command");
+                        io::argument_error(
+                            "go requires at least one git command",
+                        );
                     }
                     command::go::run(&flags.path, &flags.branch, index + 1)?;
                     break;
@@ -106,7 +108,11 @@ Maybe you wanted to say 'git add .'?";
                     if index + 1 == args.len() {
                         io::argument_error("Please provide the expression you would like to grep for");
                     }
-                    command::grep::run(&flags.path, &flags.branch, args[index + 1].as_str())?;
+                    command::grep::run(
+                        &flags.path,
+                        &flags.branch,
+                        args[index + 1].as_str(),
+                    )?;
                     break;
                 }
                 "ls-files" => {
@@ -160,7 +166,11 @@ Maybe you wanted to say 'git add .'?";
                             "replace requires at least two arguments",
                         );
                     }
-                    command::replace::run(&flags.path, &flags.branch, index + 1)?;
+                    command::replace::run(
+                        &flags.path,
+                        &flags.branch,
+                        index + 1,
+                    )?;
                     break;
                 }
                 _ => io::argument_error("argument not recognised"),

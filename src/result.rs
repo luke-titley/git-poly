@@ -21,4 +21,3 @@ pub fn handle_errors<R>(result: Result<R>) {
         }
     }
 }
-

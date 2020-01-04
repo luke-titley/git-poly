@@ -4,7 +4,7 @@ use crate::channel;
 use crate::error;
 use crate::filter;
 use crate::git;
-use crate::io::{write_to_stderr};
+use crate::io::write_to_stderr;
 use crate::path;
 use crate::repoiterator::RepoIterator;
 use crate::result::{get, handle_errors, Result};

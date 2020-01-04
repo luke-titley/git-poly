@@ -1,5 +1,5 @@
-use super::path;
 use super::channel;
+use super::path;
 use super::result;
 //------------------------------------------------------------------------------
 use regex;
@@ -9,7 +9,10 @@ use std::thread;
 use std::vec;
 
 //------------------------------------------------------------------------------
-fn list_repos(regex: &regex::Regex, send: &channel::PathSender) -> result::Result<()> {
+fn list_repos(
+    regex: &regex::Regex,
+    send: &channel::PathSender,
+) -> result::Result<()> {
     let mut current_dir = path::PathBuf::new();
     current_dir.push(".");
 
@@ -32,8 +35,9 @@ fn list_repos(regex: &regex::Regex, send: &channel::PathSender) -> result::Resul
                                     // We've found a git repo, send it back
                                     p_buf.pop();
                                     let repo_path = p_buf.as_path();
-                                    if regex.is_match(result::get(repo_path.to_str())?)
-                                    {
+                                    if regex.is_match(result::get(
+                                        repo_path.to_str(),
+                                    )?) {
                                         send.send(Some(p_buf))?;
                                     }
                                 }

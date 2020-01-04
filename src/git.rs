@@ -1,6 +1,6 @@
-use super::path;
 use super::error;
 use super::io;
+use super::path;
 use super::result;
 //------------------------------------------------------------------------------
 use std::io::BufRead;
@@ -42,8 +42,9 @@ pub fn relative_to_repo(
 
             if repo.exists() {
                 repo.pop();
-                let relative_path =
-                    result::get(path.as_path().strip_prefix(repo.as_path())?.to_str())?;
+                let relative_path = result::get(
+                    path.as_path().strip_prefix(repo.as_path())?.to_str(),
+                )?;
                 return Ok((repo, relative_path.to_string()));
             }
         }

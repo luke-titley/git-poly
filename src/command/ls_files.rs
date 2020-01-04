@@ -11,10 +11,7 @@ use std::process;
 use std::thread;
 
 //------------------------------------------------------------------------------
-fn doit(
-    branch_filter: &BranchRegex,
-    path: &path::PathBuf,
-) -> Result<()> {
+fn doit(branch_filter: &BranchRegex, path: &path::PathBuf) -> Result<()> {
     // Filter based on branch name
     if let Some(pattern) = branch_filter {
         if !filter::branch(&pattern, &path)? {

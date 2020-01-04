@@ -1,6 +1,6 @@
 //------------------------------------------------------------------------------
 use crate::git;
-use crate::io::{write_to_stderr};
+use crate::io::write_to_stderr;
 use crate::path;
 use crate::result::Result;
 //------------------------------------------------------------------------------

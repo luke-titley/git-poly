@@ -1,5 +1,5 @@
-use super::result;
 use super::path;
+use super::result;
 //------------------------------------------------------------------------------
 use colored::*;
 use std;
@@ -59,7 +59,10 @@ pub fn write_to_out(
 }
 
 //------------------------------------------------------------------------------
-pub fn write_to_stdout(repo: &path::PathBuf, output: &[u8]) -> result::Result<()> {
+pub fn write_to_stdout(
+    repo: &path::PathBuf,
+    output: &[u8],
+) -> result::Result<()> {
     // stdout
     if !output.is_empty() {
         let stdout = std::io::stdout();
@@ -72,7 +75,10 @@ pub fn write_to_stdout(repo: &path::PathBuf, output: &[u8]) -> result::Result<()
 }
 
 //------------------------------------------------------------------------------
-pub fn write_to_stderr(repo: &path::PathBuf, output: &[u8]) -> result::Result<()> {
+pub fn write_to_stderr(
+    repo: &path::PathBuf,
+    output: &[u8],
+) -> result::Result<()> {
     // stderr
     if !output.is_empty() {
         let stderr = std::io::stderr();

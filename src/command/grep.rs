@@ -1,7 +1,7 @@
 //------------------------------------------------------------------------------
 use crate::branch_regex::BranchRegex;
 use crate::filter;
-use crate::io::{write_to_stderr};
+use crate::io::write_to_stderr;
 use crate::path;
 use crate::repoiterator::RepoIterator;
 use crate::result::{handle_errors, Result};

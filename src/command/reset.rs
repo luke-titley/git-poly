@@ -4,7 +4,7 @@ use crate::filter;
 use crate::io::{write_to_stderr, write_to_stdout};
 use crate::path;
 use crate::repoiterator::RepoIterator;
-use crate::result::{Result};
+use crate::result::Result;
 //------------------------------------------------------------------------------
 use std::process;
 
@@ -41,4 +41,3 @@ pub fn run(regex: &regex::Regex, branch_regex: &BranchRegex) -> Result<()> {
 
     Ok(())
 }
-

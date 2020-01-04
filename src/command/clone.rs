@@ -4,7 +4,7 @@ use crate::path;
 use crate::result::{handle_errors, Result};
 //------------------------------------------------------------------------------
 use std::fs;
-use std::io::{BufRead};
+use std::io::BufRead;
 use std::process;
 use std::thread;
 

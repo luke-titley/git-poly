@@ -1,8 +1,8 @@
 use super::path;
 use super::status;
 //------------------------------------------------------------------------------
-use std::io;
 use std::fmt;
+use std::io;
 
 //------------------------------------------------------------------------------
 pub type PathSendError =
@@ -95,4 +95,3 @@ impl From<std::convert::Infallible> for Error {
         Error::Infallible(error)
     }
 }
-
