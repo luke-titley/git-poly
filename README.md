@@ -29,7 +29,12 @@ You can use any of these tools along with 'git poly'.
 ## git subtree
 [home] (https://github.com/git/git/blob/master/contrib/subtree/git-subtree.txt)
 
-# The Idea
+# The Goal
+## In Short
+- Make working with 100+ git repos feel like working in a single git repo for most
+day to day operations.
+
+## The Long
 Although putting all your code in a single repo simplifies a lot of things when
 working across many codebases, it's difficult to do with the current git tools.
 
@@ -38,13 +43,15 @@ straight forward to manage read/write permissions, continious builds and sandbox
 repo history access.
 
 The question this project is trying to answer is:
-    Can we make it fairly straight forward way for a developer to work across multiple
-    git repos at once.
+    Can we make it fairly straight forward way for a developer to work across
+    multiple git repos at once.
 
-git-poly tries to present multiple repos as if they are one repo for day to day operations.
+git-poly tries to present multiple repos as if they are one repo for day to day
+operations.
 
 The heart of this is git poly status. Which performs a 'git status' on all repos
-and presents the results to make it appear as though you are in a single git repo.
+and presents the results to make it appear as though you are in a single git
+repo.
 
 Most of the commands are mirrors of git commands, but designed to work across
 multiple projects, and give the effect of working on a single git repo.
@@ -62,6 +69,20 @@ the file path of the repo.
 Those commands also work with the '--branch/-branch' flag, which allows you to filter
 the repos you are working on, using a regular expression that is matched against
 the branch the repo is currently tracking.
+
+### Differences
+#### git slave
+- It's written in perl.
+- It's doesn't do as many operations in parallel.
+- It doesn't have the goal of presenting multiple repose as one repo.
+#### google repo
+- It's written in python.
+- It's doesn't do as many operations in parallel.
+- It doesn't have the goal of presenting multiple repose as one repo.
+#### git submodule
+- It doesn't have the goal of presenting multiple repose as one repo.
+#### git subtree
+- It's a good alternative.
 
 # Cloning
 
