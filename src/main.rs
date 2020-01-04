@@ -14,26 +14,14 @@ mod result;
 mod status;
 //------------------------------------------------------------------------------
 use branch_regex::*;
-use channel::*;
-use error::*;
 use io::*;
-use repoiterator::*;
 use result::*;
-use status::*;
 //------------------------------------------------------------------------------
 use regex;
 use std;
 use std::env;
 use std::fs;
-use std::iter::FromIterator;
 use std::process;
-use std::thread;
-use std::vec;
-
-use std::io::BufRead;
-use std::io::BufReader;
-
-use colored::*;
 
 //------------------------------------------------------------------------------
 fn mv(from: &str, to: &str) -> Result<()> {
