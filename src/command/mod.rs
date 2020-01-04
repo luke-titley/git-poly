@@ -7,6 +7,7 @@ pub mod go;
 pub mod grep;
 pub mod ls;
 pub mod ls_files;
+pub mod mv;
 pub mod status;
 pub mod replace;
 pub mod reset;
