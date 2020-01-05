@@ -1,9 +1,10 @@
 # Remove the old build
-mkdir -p centos7/target
-rm -rf centos7/target
+PLATFORM=centos7
+mkdir -p ${PLATFORM}/target
+rm -rf ${PLATFORM}/target
 
 # Do the build
-docker build -t git-poly:centos7 -f centos7/Dockerfile .
-docker create --name cont1 git-poly:centos7
-docker cp cont1:/target centos7/target
+docker build -t git-poly:${PLATFORM} -f ${PLATFORM}/Dockerfile .
+docker create --name cont1 git-poly:${PLATFORM}
+docker cp cont1:/target ${PLATFORM}/target
 docker rm cont1
