@@ -1,4 +1,7 @@
+#!/usr/bin/env bash
+
 PLATFORM=$1
+
 mkdir -p ${PLATFORM}/target
 rm -rf ${PLATFORM}/target
 
