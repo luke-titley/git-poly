@@ -1,5 +1,4 @@
-# Remove the old build
-PLATFORM=centos7
+PLATFORM=$1
 mkdir -p ${PLATFORM}/target
 rm -rf ${PLATFORM}/target
 
