@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
 
-bash build_platform.sh centos7
+bash build_platform.sh linux
