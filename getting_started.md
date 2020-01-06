@@ -35,5 +35,5 @@ repos:
 Then to clone them all in parallel you can use grep.
 
 ```bash
-grep --color=never --only-matching https.*\.git config.yml | git poly clone
+grep --color=never --only-matching 'https.*\.git' config.yml | git poly clone
 ```
