@@ -2,7 +2,6 @@
 
 # Download
 
-|Platform |
-|---------|
-|Centos7  |
-|Centos6  |
+|Platform|    Version    |
+|--------|---------------|
+|Linux   | Kernel 4.9.x  |
