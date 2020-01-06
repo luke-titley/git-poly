@@ -1,0 +1,3 @@
+repos:
+    - https://github.com/openssl/openssl.git
+    - https://github.com/libjpeg-turbo/libjpeg-turbo.git
