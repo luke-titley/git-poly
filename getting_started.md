@@ -76,4 +76,30 @@ Changes not staged for commit:
 Changes are grouped by the branches currently checked out. In the example above
 both repos are on the master branch.
 
+If we switch libjpeg onto a branch called develop, git poly status will display
+the results differently.
+
+
+Here we're running the git command 'git checkout -b develop' on all the repos
+which have 'libjpeg' in the path name. In this case, its only one repo.
+```
+git p --path libjpeg go checkout -b develop
+```
+
+Now if I run 'git poly status', I get a different result.
+
+```
+on branch develop
+Changes not staged for commit:
+  (use "git add <file>..." to include in what will be committed)
+
+        modified:   ./libjpeg-turbo/libjpeg-turbo/jsimd.h
+
+on branch master
+Changes not staged for commit:
+  (use "git add <file>..." to include in what will be committed)
+
+        modified:   ./openssl/openssl/ssl/ssl_rsa.c
+```
+
 
