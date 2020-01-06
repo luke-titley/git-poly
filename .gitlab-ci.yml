@@ -6,8 +6,9 @@ build:
         - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs > ./install_rustup.sh
         - echo '' | bash ./install_rustup.sh -y
         - export PATH="/root/.cargo/bin:${PATH}"
-        - cargo build --release
+        - rustup target add x86_64-unknown-linux-musl
+        - cargo build --release --target x86_64-unknown-linux-musl
     artifacts:
         paths:
-            - target/release/git-p
+            - target/x86_64-unknown-linux-musl/release/git-p
         expire_in: 1 week
