@@ -10,10 +10,10 @@
 
 ### Cloning
 
-git poly doesnt have a manfist or configuration file, so it's up to you to
+git poly doesnt have a manifest or configuration file, so it's up to you to
 manage that.
 
-The simplest way to clone the repos is to just a straight forward git clone.
+The simplest way to clone the repos is git clone.
 
 ```bash
 git clone https://github.com/openssl/openssl.git
@@ -35,5 +35,5 @@ repos:
 Then to clone them all in parallel you can use grep.
 
 ```bash
-grep color=never --only-matching https.*\.git config.yml | git poly clone
+grep --color=never --only-matching https.*\.git config.yml | git poly clone
 ```
