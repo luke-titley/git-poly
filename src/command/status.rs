@@ -121,6 +121,7 @@ fn status_thread(
 //------------------------------------------------------------------------------
 struct StatusIteration<'a> {
     msg: &'a StatusMsg,
+    print_line: bool,
     print_branch: bool,
     print_tracking: bool,
     color: &'static str,
@@ -161,6 +162,7 @@ impl<'a> std::iter::Iterator for StatusIterator<'a> {
             if index == 0 {
                 Some(StatusIteration {
                     msg: status,
+                    print_line: false,
                     print_branch: true,
                     print_tracking: true,
                     color,
@@ -170,11 +172,13 @@ impl<'a> std::iter::Iterator for StatusIterator<'a> {
             } else {
                 let previous_status = &(self.statuses[index - 1]);
                 let print_branch = status.0 != previous_status.0;
+                let print_line = print_branch;
                 let print_tracking =
                     print_branch || (status.1).0 != (previous_status.1).0;
 
                 Some(StatusIteration {
                     msg: status,
+                    print_line,
                     print_branch,
                     print_tracking,
                     color,
@@ -222,9 +226,13 @@ pub fn run(regex: &regex::Regex, branch_regex: &BranchRegex) -> Result<()> {
     for i in StatusIterator::new(&changes) {
         let (branch, (tracking, staging), path) = i.msg;
 
+        // Make a newline if necessary
+        if i.print_line {
+            println!();
+        }
+
         // Branch name if necessary
         if i.print_branch {
-            println!();
             println!("on branch {0}", branch.cyan());
         }
 
