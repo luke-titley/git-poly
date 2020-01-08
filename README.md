@@ -10,7 +10,7 @@ git-poly is written in rust.
 - Searching for git repos is done asynchronously, the moment we have found a git
   repo a new thread is created to process it.
 - Regex based find and replace
-- There's no config file.
+- There's no config/manifest file.
 - Aligns very closely with git, only four more very straight forward commands
 are added.
 
@@ -20,7 +20,7 @@ are added.
 
 # Similar/Related projects
 
-You can use any of these tools along with 'git poly'.
+You can these along with 'git poly'.
 
 - [git slave] (http://gitslave.sourceforge.net/gits-man-page.html#get_status_on_all_branches)
 - [google repo] (https://gerrit.googlesource.com/git-repo)
@@ -29,8 +29,8 @@ You can use any of these tools along with 'git poly'.
 
 # The Goal
 ## In Short
-- Make working with 100+ git repos feel like working in a single git repo for most
-day to day operations.
+- Make working with 100+ git repos feel like working in a single git repo for
+most day to day operations.
 
 ## The Long
 Although putting all your code in a single repo simplifies a lot of things when

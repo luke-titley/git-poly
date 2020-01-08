@@ -2,11 +2,50 @@
 
 ## Download
 
-|Platform|    Version    | Instruction Set |
-|--------|---------------|-----------------|
-|Linux   | Kernel 4.9.x  |    x86_64       |
+|Platform|    Version    | Instruction Set |        Download         |
+|--------|---------------|-----------------|-------------------------|
+|Linux   | Kernel 4.9.x  |    x86_64       | [here](linux/4.9/git-p) |
 
-## 101
+## What is git-poly ?
+
+A tool to help making working with 50+ git repos easier.
+
+### The Goal
+Make working with many git repos feel like working in a single git repo for
+most day to day operations.
+
+### Features
+- Very fast!
+- Almost all operations are done in parallel
+- Multi-platform (mac, linux, windows)
+- Searching for git repos is done asynchronously, the moment we have found a git
+  repo a new thread is created to process it.
+- Regex based find and replace
+- There's no config/manifest file.
+- Aligns very closely with git, only four more very straight forward commands
+are added.
+
+### Git poly doesnt
+- Track repo dependencies
+- Specify how to organise your repos
+
+### Similar/Related projects
+
+You can use these along with 'git poly'.
+
+- [git slave](http://gitslave.sourceforge.net/gits-man-page.html#get_status_on_all_branches)
+- [google repo](https://gerrit.googlesource.com/git-repo)
+- [git submodule](https://git-scm.com/book/en/v2/Git-Tools-Submodules)
+- [git subtree](https://github.com/git/git/blob/master/contrib/subtree/git-subtree.txt)
+
+
+# The Code
+
+git-poly is written in rust. You can find the source code here:
+- [github](https://github.com/luke-titley)
+- [gitlab](https://github.com/luke-titley)
+
+## Getting Started
 
 ### clone
 
@@ -175,3 +214,13 @@ Then if you want to throw away everything that's changed.
 ```
 git p go checkout .
 ```
+
+### replace
+
+You can perform a parallel find and replace, using 'git p replace'.
+This will run a thread per repo and then a thread per file.
+
+```
+git p replace cat dog
+```
+
