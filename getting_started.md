@@ -136,6 +136,42 @@ git p go push
 ```
 
 ### grep
+
+git poly can run 'git grep' in parallel over multiple repos. The benefit to
+using 'git p grep' over 'git p go grep' is that the resulting file paths
+are displayed with respect to the current directory.
+
+```
+git p grep hel
+```
+
 ### ls-files
+
+Similarly to 'git p grep', there is first class support for 'git ls-files', with
+resulting file paths correctly adjusted.
+
+```
+git p ls-files
+```
+
 ### mv
 
+This sub command is a utility for moving files from one repo to another.
+
+```
+git p mv ./openssl/openssl/ssl/ssl_rsa.c ./libjpeg-turbo/libjpeg-turbo/ssl_rsa.c
+```
+
+### reset
+
+You can reset everything you have staged with 'git p reset'.
+
+```
+git p reset
+```
+
+Then if you want to throw away everything that's changed.
+
+```
+git p go checkout .
+```
