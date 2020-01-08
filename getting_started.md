@@ -21,7 +21,7 @@ git clone https://github.com/libjpeg-turbo/libjpeg-turbo.git
 ```
 
 If you already have a setup in place that tracks the repos you are working
-with, then you can take advantage of 'git poly clone' to download everything in
+with, then you can take advantage of 'git p clone' to download everything in
 parallel.
 
 Imagine for example you have a yml configuration file that looks like this.
@@ -32,14 +32,16 @@ repos:
     - https://github.com/libjpeg-turbo/libjpeg-turbo.git
 ```
 
-Then to clone them all in parallel you can use grep.
+Then on linux to clone them all in parallel you can use grep.
 
 ```bash
-grep --color=never --only-matching 'https.*\.git' config.yml | git poly clone
+grep --color=never --only-matching 'https.*\.git' config.yml | git p clone
 ```
 
-It's important to note that 'git poly clone' will maintain the folder path in
-the url.
+It's important to note that 'git p clone' will maintain the folder path in
+the url. This is different from git 'clone' which will clone into a single
+folder.
+
 
 ### Status
 
@@ -48,10 +50,10 @@ out. It combines them to make it appear as if you are working in a single git
 repo.
 
 To perform a parallel 'git status' across all the repos and display the combined
-results you use 'git poly status'
+results you use 'git p status'
 
 ```bash
-git poly status
+git p status
 ```
 
 For example imagine I edit both repos. Here I'm adding an additional comment to
@@ -62,7 +64,7 @@ echo '// extra comment' >> libjpeg-turbo/libjpeg-turbo/jsimd.h
 echo '// extra comment' >> openssl/openssl/ssl/ssl_rsa.c
 ```
 
-Now if I run 'git poly status' this is the result I'll see.
+Now if I run 'git p status' this is the result I'll see.
 
 ```
 on branch master
@@ -86,7 +88,7 @@ which have 'libjpeg' in the path name. In this case, its only one repo.
 git p --path libjpeg go checkout -b develop
 ```
 
-Now if I run 'git poly status', I get a different result.
+Now if I run 'git p status', I get a different result.
 
 ```
 on branch develop
@@ -102,4 +104,24 @@ Changes not staged for commit:
         modified:   ./openssl/openssl/ssl/ssl_rsa.c
 ```
 
+### Add and Commit
+
+To add and commit those changes.
+
+```bash
+git p add ./libjpeg-turbo/libjpeg-turbo/jsimd.h
+git p add ./openssl/openssl/ssl/ssl_rsa.c
+```
+
+or
+
+```bash
+git p add -u
+```
+
+then
+
+```bash
+git p commit -m "Ive made a change to some files"
+```
 
