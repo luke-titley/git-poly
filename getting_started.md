@@ -4,7 +4,7 @@
 
 |Platform|    Version    | Instruction Set |        Download         |
 |--------|---------------|-----------------|-------------------------|
-|Linux   | Kernel 4.9.x  |    x86_64       | [here](linux/4.9/git-p) |
+|Linux   | Kernel 4.9.x  |    x86_64       | [here](linux/git-p) |
 
 ## What is git-poly ?
 
