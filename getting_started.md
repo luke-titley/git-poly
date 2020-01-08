@@ -8,7 +8,7 @@
 
 ## 101
 
-### Clone
+### clone
 
 git poly doesnt have a manifest or configuration file, so it's up to you to
 manage that.
@@ -43,7 +43,7 @@ the url. This is different from git 'clone' which will clone into a single
 folder.
 
 
-### Status
+### status
 
 git poly will show you the status of all the files in the repos you have checked
 out. It combines them to make it appear as if you are working in a single git
@@ -104,9 +104,9 @@ Changes not staged for commit:
         modified:   ./openssl/openssl/ssl/ssl_rsa.c
 ```
 
-### Add and Commit
+### Add 
 
-To add and commit those changes.
+To add those changes.
 
 ```bash
 git p add ./libjpeg-turbo/libjpeg-turbo/jsimd.h
@@ -119,9 +119,23 @@ or
 git p add -u
 ```
 
-then
+### commit
+
+To commit
 
 ```bash
 git p commit -m "Ive made a change to some files"
 ```
+
+### push
+Finally, there isnt a first class 'push' subcommand. So you have to go via the
+go subcommand.
+
+```
+git p go push
+```
+
+### grep
+### ls-files
+### mv
 
