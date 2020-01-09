@@ -68,23 +68,6 @@ Those commands also work with the '--branch/-branch' flag, which allows you to f
 the repos you are working on, using a regular expression that is matched against
 the branch the repo is currently tracking.
 
-### Differences
-#### git slave
-- It's written in perl.
-- It's doesn't do as many operations in parallel.
-- It doesn't have the goal of presenting multiple repose as one repo.
-
-#### google repo
-- It's written in python.
-- It's doesn't do as many operations in parallel.
-- It doesn't have the goal of presenting multiple repose as one repo.
-
-#### git submodule
-- It doesn't have the goal of presenting multiple repose as one repo.
-
-#### git subtree
-- It's a good alternative.
-
 # Cloning
 
 git poly doesn't use a config file. It just searches for folders containing
