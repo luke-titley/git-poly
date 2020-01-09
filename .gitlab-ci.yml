@@ -30,6 +30,8 @@ build_docs:
         expire_in: 1 week
 
 pages:
+    only:
+        - master
     stage: pages
     image: centos:7
     script:
