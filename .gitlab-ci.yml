@@ -7,14 +7,18 @@ build_linux:
     stage: build
     image: rust:1.40-alpine
     script:
+        - mkdir -p .cargo
         - rustup target add x86_64-unknown-linux-musl
-        - cargo build --release --target x86_64-unknown-linux-musl
+        - env CARGO_HOME=$PWD/.cargo cargo build --release --target x86_64-unknown-linux-musl
         - uname -r
         - uname -r > target/kernel_version.txt
     artifacts:
         paths:
             - target
         expire_in: 1 week
+    cache:
+        paths:
+            - .cargo
 
 build_docs:
     stage: doc
