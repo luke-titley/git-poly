@@ -1,5 +1,4 @@
 stages:
-    - doc
     - build
     - deploy
 
@@ -21,7 +20,7 @@ build_linux:
             - .cargo
 
 build_docs:
-    stage: doc
+    stage: build
     image: rust:1.40-alpine
     script:
         - rustdoc getting_started.md --markdown-css milligram.min.css
