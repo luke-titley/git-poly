@@ -1,4 +1,5 @@
 stages:
+    - doc
     - build
     - deploy
 
@@ -16,7 +17,7 @@ build_linux:
         expire_in: 1 week
 
 build_docs:
-    stage: build
+    stage: doc
     image: rust:1.40-alpine
     script:
         - rustdoc getting_started.md --markdown-css milligram.min.css
