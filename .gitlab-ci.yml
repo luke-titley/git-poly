@@ -12,7 +12,7 @@ build_linux:
         - uname -r > target/kernel_version.txt
     artifacts:
         paths:
-            - target/x86_64-unknown-linux-musl/release/git-p
+            - target
         expire_in: 1 week
 
 build_docs:
@@ -26,8 +26,8 @@ build_docs:
         expire_in: 1 week
 
 pages:
-    only:
-        - master
+    #only:
+    #    - master
     stage: deploy
     image: centos:7
     script:
