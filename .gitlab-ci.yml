@@ -24,14 +24,15 @@ build_docs:
     image: rust:1.40-alpine
     script:
         - rustdoc getting_started.md --markdown-css milligram.min.css
+        - mv doc/getting_started.html doc/index.html
     artifacts:
         paths:
             - doc
         expire_in: 1 week
 
 pages:
-    #only:
-    #    - master
+    only:
+        - master
     stage: deploy
     image: centos:7
     script:
