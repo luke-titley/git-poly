@@ -34,7 +34,9 @@ pages:
         - mkdir -p public/linux
         - cp doc/* public/
         - cp target/x85_64-unknown-linux-musl/release/git-p public/linux/
-
+    dependencies:
+        - build_docs
+        - build_linux
     artifacts:
         paths:
             - public
