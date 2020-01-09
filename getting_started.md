@@ -43,7 +43,7 @@ You can use these along with 'git poly'.
 
 git-poly is written in rust. You can find the source code here:
 
-- [github](https://github.com:luke-titley/git-poly)
+- [github](https://github.com/luke-titley/git-poly)
 - [gitlab](https://gitlab.com/luke.titley/git-poly)
 
 ## Getting Started
