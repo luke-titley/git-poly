@@ -6,14 +6,10 @@ build_linux:
     stage: build
     image: rust:1.40-alpine
     script:
-        - yum install -y gcc
-        - yum install -y curl
-        - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs > ./install_rustup.sh
-        - echo '' | bash ./install_rustup.sh -y
-        - export PATH="/root/.cargo/bin:${PATH}"
         - rustup target add x86_64-unknown-linux-musl
         - cargo build --release --target x86_64-unknown-linux-musl
         - uname -r
+        - uname -r > target/kernel_version.txt
     artifacts:
         paths:
             - target/x86_64-unknown-linux-musl/release/git-p
