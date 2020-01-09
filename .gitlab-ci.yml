@@ -32,7 +32,7 @@ build_docs:
 pages:
     only:
         - master
-    stage: pages
+    stage: deploy
     image: centos:7
     script:
         - mkdir -p public/linux
