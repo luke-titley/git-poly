@@ -1,14 +1,25 @@
 # Getting started
 
+## Installation
+
+Download the binary for your platform and place it somewhere within your
+$PATH. The git-p statically links libc so the same binary can be used
+across linux distributions.
+
 ## Download
+
+At the moment there is only a linux pre-built binary. Get in contact if
+you can provide machines for building on osx or windows.
+
+Alternatively, you can build it quite easily yourself using cargo from rust.
 
 |Platform|    Version    | Instruction Set |        Download         |
 |--------|---------------|-----------------|-------------------------|
-|Linux   | Kernel 4.9.x  |    x86_64       | [here](linux/git-p) |
+|Linux   | Kernel 4.19.x  |    x86_64       | [here](linux/git-p) |
 
 ## What is git-poly ?
 
-A tool to help making working with 50+ git repos easier.
+A tool to help developing across 50+ git repos easier.
 
 ### The Goal
 Make working with many git repos feel like working in a single git repo for
@@ -224,4 +235,19 @@ This will run a thread per repo and then a thread per file.
 ```
 git p replace cat dog
 ```
+
+### go
+
+This runs a git command across the given repos in parallel.
+
+For example
+```
+git p go add -u
+```
+
+will stage any unstaged changes in any of the repos you are working in.
+
+### cmd
+
+The same as 'go' command, only executes shell commands.
 
