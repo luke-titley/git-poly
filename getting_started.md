@@ -6,6 +6,8 @@ Download the binary for your platform and place it somewhere within your
 $PATH. The git-p statically links libc so the same binary can be used
 across linux distributions.
 
+git poly depends on git. So you must have git installed.
+
 ## Download
 
 At the moment there is only a linux pre-built binary. Get in contact if
