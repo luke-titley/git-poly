@@ -19,7 +19,7 @@ build_docs:
     stage: build
     image: rust:1.40-alpine
     script:
-        - bash build_doc.sh
+        - rustdoc getting_started.md --markdown-css milligram.min.css
     artifacts:
         paths:
             - doc
