@@ -55,7 +55,7 @@ You can use these along with 'git poly'.
 - [git subtree](https://github.com/git/git/blob/master/contrib/subtree/git-subtree.txt)
 
 What's the point of git-poly. Why don't I just use one of the above?
-git-poly fills a specific need. An untrusive, simple way to make changes to
+git-poly fills a specific need. An unintrusive, simple way to make changes to
 multiple repos at once.
 
 
