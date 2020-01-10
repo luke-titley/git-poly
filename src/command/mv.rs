@@ -23,7 +23,7 @@ pub fn run(from: &str, to: &str) -> Result<()> {
         if to_path.exists() {
             let output = process::Command::new("git")
                 .args(&["rm", "-rf", to_rel.as_str()])
-                .current_dir(to_repo)
+                .current_dir(to_repo.clone())
                 .output()?;
 
             write_to_stderr(&to_repo, &output.stderr)?;
