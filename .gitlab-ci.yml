@@ -23,7 +23,7 @@ build_docs:
     stage: build
     image: rust:1.40-alpine
     script:
-        - rustdoc getting_started.md --markdown-css milligram.min.css
+        - rustdoc getting_started.md --markdown-no-toc --markdown-css milligram.min.css
         - mv doc/getting_started.html doc/index.html
     artifacts:
         paths:

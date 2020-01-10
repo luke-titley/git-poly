@@ -1,1 +1,2 @@
-rustdoc getting_started.md --markdown-css milligram.min.css
+rustdoc getting_started.md --markdown-no-toc --markdown-css milligram.min.css
+
