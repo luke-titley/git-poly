@@ -48,7 +48,7 @@ pub fn run(regex: &regex::Regex) -> Result<()> {
 
     // This will break the git repo url https/http or git into three parts
     // The protocol, the path and the option .git extension
-    const GIT_REPO_URL : &str = r"^([a-zA-Z0-9-]+@[a-zA-Z0-9.-]+:|https?://[a-zA-Z0-9.-]+/)([a-zA-Z/-]+)(\.git)?";
+    const GIT_REPO_URL: &str = r"^([a-zA-Z0-9-]+@[a-zA-Z0-9.-]+:|https?://[a-zA-Z0-9.-]+/)([a-zA-Z/-]+)(\.git)?";
 
     let dirs_regex = regex::Regex::new(GIT_REPO_URL);
 
