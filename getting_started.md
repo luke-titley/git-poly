@@ -21,11 +21,13 @@ Alternatively, you can build it quite easily yourself using cargo from rust.
 
 ## What is git-poly ?
 
-A tool to help developing across 50+ git repos easier.
+A tool to help developing across 50+ git repos easier. It's a simple,
+light weight tool to parallelize working with many git repos.
 
 ### The Goal
 Make working with many git repos feel like working in a single git repo for
-most day to day operations.
+most day to day operations, while still allowing those repos to be
+completely seperate.
 
 ### Features
 - Very fast!
@@ -40,6 +42,7 @@ are added.
 
 ### Git poly doesnt
 - Track repo dependencies
+- Manage sub repo / parent repo histories
 - Specify how to organise your repos
 
 ### Similar/Related projects
@@ -51,6 +54,16 @@ You can use these along with 'git poly'.
 - [git submodule](https://git-scm.com/book/en/v2/Git-Tools-Submodules)
 - [git subtree](https://github.com/git/git/blob/master/contrib/subtree/git-subtree.txt)
 
+What's the point of git-poly. Why don't I just use one of the above?
+git-poly fills a specific need. An untrusive, simple way to make changes to
+multiple repos at once.
+
+
+# In what situations is git-poly useful?
+If you have lots of little repos that depend on one and other, and you find
+that you are often changing a few of them at a time when you develop a new
+feature. You want the histories to remain independant, tags and releases to be
+independant but you still need to change a few of them at a time.
 
 # The Code
 
